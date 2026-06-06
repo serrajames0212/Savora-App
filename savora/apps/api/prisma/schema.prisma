@@ -144,3 +144,10 @@ model DailyUsage {
 
   @@unique([userId, date])
 }
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  city      String
+  createdAt DateTime @default(now())
+}
