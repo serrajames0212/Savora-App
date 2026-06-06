@@ -63,7 +63,7 @@ export const BottomNav: React.FC = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-around',
-        zIndex: 40,
+        zIndex: 50,
       }}
     >
       {navItems.map((item) => (

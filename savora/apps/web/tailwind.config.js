@@ -17,9 +17,9 @@ export default {
         'text-accent': 'var(--color-text-accent)',
       },
       fontFamily: {
-        display: 'var(--font-display)',
-        body: 'var(--font-body)',
-        label: 'var(--font-label)',
+        display: ['Cormorant Garamond', 'Georgia', 'serif'],
+        body: ['DM Sans', 'system-ui', 'sans-serif'],
+        label: ['DM Mono', 'monospace'],
       },
       borderRadius: {
         sm: 'var(--radius-sm)',

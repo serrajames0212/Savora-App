@@ -19,6 +19,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       useUserStore.getState().logout();
     }
+    // For 402 (payment required / gated), return the response so pages can handle it
+    if (error.response?.status === 402) {
+      error.response.isGated = true;
+      return error.response;
+    }
     return Promise.reject(error);
   }
 );

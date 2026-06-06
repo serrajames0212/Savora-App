@@ -6,7 +6,8 @@
     "dev": "ts-node --transpile-only src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "npx tsx --test src/tests/guardrail.test.ts src/tests/fingerprint.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.17.1",

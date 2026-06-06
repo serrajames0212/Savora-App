@@ -44,6 +44,27 @@ body {
   border-radius: 2px;
 }
 
+/* Form element base styles */
+input:not([type='range']),
+textarea,
+select {
+  background-color: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body);
+  outline: none;
+  width: 100%;
+  transition: border-color var(--duration-fast) var(--ease-out-expo);
+}
+
+input:not([type='range']):focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-accent-primary);
+}
+
 /* Custom range input reset */
 input[type='range'] {
   -webkit-appearance: none;

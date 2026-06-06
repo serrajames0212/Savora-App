@@ -24,8 +24,9 @@ const RESTRICTION_KEYWORDS: Record<string, string[]> = {
     'alcohol', 'wine', 'beer', 'rum', 'vodka', 'whiskey', 'sake', 'mirin',
   ],
   'gluten-free': [
-    'wheat', 'flour', 'bread', 'pasta', 'barley', 'rye', 'spelt', 'semolina',
-    'couscous', 'bulgur', 'farro', 'panko', 'breadcrumb', 'soy sauce',
+    'wheat', 'wheat flour', 'all-purpose flour', 'bread flour', 'bread', 'pasta',
+    'barley', 'rye', 'spelt', 'semolina', 'couscous', 'bulgur', 'farro',
+    'panko', 'breadcrumb', 'soy sauce',
   ],
   'dairy-free': [
     'milk', 'cream', 'butter', 'cheese', 'yogurt', 'whey', 'casein', 'ghee',

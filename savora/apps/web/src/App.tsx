@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BottomNav } from './components/ui/BottomNav';
+import { ToastContainer } from './components/ui/Toast';
 import { useUserStore } from './stores/useUserStore';
 
 import OnboardingPage from './pages/OnboardingPage';
@@ -48,29 +49,36 @@ const RootRedirect: React.FC = () => {
   return <Navigate to={isAuthenticated ? '/home' : '/onboarding'} replace />;
 };
 
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useUserStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  return <>{children}</>;
+}
+
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ToastContainer />
         <AppLayout>
           <Routes>
             <Route path="/" element={<RootRedirect />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/generate" element={<GeneratePage />} />
-            <Route path="/generate/:mood" element={<GenerateMoodPage />} />
-            <Route path="/discovery" element={<DiscoveryPage />} />
-            <Route path="/discovery/:city" element={<CityPage />} />
-            <Route path="/discovery/:city/:restaurantSlug" element={<RestaurantPage />} />
-            <Route path="/discovery/:city/:restaurantSlug/:dishSlug" element={<DishPage />} />
-            <Route path="/favorites" element={<FavoritesPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/memory" element={<MemoryVaultPage />} />
-            <Route path="/profile/subscription" element={<SubscriptionPage />} />
-            <Route path="/genome/identity" element={<IdentityGenomePage />} />
-            <Route path="/genome/flavor" element={<FlavorGenomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+            <Route path="/generate" element={<ProtectedRoute><GeneratePage /></ProtectedRoute>} />
+            <Route path="/generate/:mood" element={<ProtectedRoute><GenerateMoodPage /></ProtectedRoute>} />
+            <Route path="/discovery" element={<ProtectedRoute><DiscoveryPage /></ProtectedRoute>} />
+            <Route path="/discovery/:city" element={<ProtectedRoute><CityPage /></ProtectedRoute>} />
+            <Route path="/discovery/:city/:restaurantSlug" element={<ProtectedRoute><RestaurantPage /></ProtectedRoute>} />
+            <Route path="/discovery/:city/:restaurantSlug/:dishSlug" element={<ProtectedRoute><DishPage /></ProtectedRoute>} />
+            <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/memory" element={<ProtectedRoute><MemoryVaultPage /></ProtectedRoute>} />
+            <Route path="/profile/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+            <Route path="/genome/identity" element={<ProtectedRoute><IdentityGenomePage /></ProtectedRoute>} />
+            <Route path="/genome/flavor" element={<ProtectedRoute><FlavorGenomePage /></ProtectedRoute>} />
           </Routes>
         </AppLayout>
       </BrowserRouter>
