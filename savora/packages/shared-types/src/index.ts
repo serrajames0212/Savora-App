@@ -99,12 +99,44 @@ export interface GeneratedRecipe {
   fingerprint: RecipeFingerprint;
 }
 
+export interface FavoriteMetadata {
+  mood?: string;
+  city?: string;
+  restaurantName?: string;
+  dishName?: string;
+  cuisine?: string;
+  [key: string]: unknown;
+}
+
 export interface Favorite {
   id: string;
   userId: string;
   itemType: 'recipe' | 'restaurant' | 'dish' | 'memory';
   itemId: string;
+  metadata?: FavoriteMetadata | null;
   savedAt: string;
+  recipe?: GeneratedRecipe | null;
+}
+
+export interface MemoryChapter {
+  title: string;
+  period: string;
+  description: string;
+  dominantCuisines: string[];
+  dominantMoods: string[];
+  keyRecipes: string[];
+}
+
+export interface MemoryVaultData {
+  chapters: MemoryChapter[];
+  strongestCities: { city: string; searchCount: number }[];
+  topIngredients: string[];
+  moodFrequency: Record<string, number>;
+  seasonalPatterns: string;
+  evolutionInsight: string;
+  dataNote: string | null;
+  isGated: boolean;
+  gatedSince: string | null;
 }
 
 export type SubscriptionStatus = 'free' | 'reserve';

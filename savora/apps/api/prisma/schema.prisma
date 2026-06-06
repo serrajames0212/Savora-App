@@ -94,7 +94,6 @@ model GeneratedRecipe {
   fingerprint        Json
   createdAt          DateTime @default(now())
   history            RecipeHistory?
-  favorites          Favorite[]
 }
 
 model RecipeHistory {
@@ -107,13 +106,13 @@ model RecipeHistory {
 }
 
 model Favorite {
-  id       String          @id @default(cuid())
+  id       String   @id @default(cuid())
   userId   String
   itemType String
   itemId   String
-  savedAt  DateTime        @default(now())
-  user     User            @relation(fields: [userId], references: [id])
-  recipe   GeneratedRecipe? @relation(fields: [itemId], references: [id])
+  metadata Json?
+  savedAt  DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id])
 }
 
 model Subscription {
