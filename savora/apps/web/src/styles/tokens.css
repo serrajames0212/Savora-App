@@ -1,0 +1,47 @@
+:root {
+  --color-bg-base: #0f0f0f;
+  --color-bg-surface: #161616;
+  --color-bg-elevated: #1e1e1e;
+  --color-bg-overlay: #242424;
+  --color-accent-primary: #c9a96e;
+  --color-accent-secondary: #b8915a;
+  --color-accent-muted: #a07840;
+  --color-accent-glow: rgba(201, 169, 110, 0.12);
+  --color-accent-border: rgba(201, 169, 110, 0.25);
+  --color-text-primary: #f5f0e8;
+  --color-text-secondary: #b8b0a0;
+  --color-text-muted: #6b6358;
+  --color-text-accent: #c9a96e;
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-medium: rgba(255, 255, 255, 0.10);
+
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+  --shadow-elevated: 0 8px 40px rgba(0,0,0,0.5);
+  --shadow-glow-accent: 0 0 24px rgba(201, 169, 110, 0.15);
+
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --font-label: 'DM Mono', monospace;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --duration-fast: 150ms;
+  --duration-normal: 280ms;
+  --duration-slow: 500ms;
+}
