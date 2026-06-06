@@ -39,7 +39,7 @@ export async function checkAndTriggerEvolution(
 
     // Trigger 1: 3+ favorites with same dominant flavor in 7 days
     const sevenDaysAgoFav = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const recentWeekFavorites = recentFavorites.filter((f) => f.savedAt > sevenDaysAgoFav);
+    const recentWeekFavorites = recentFavorites.filter((f: { savedAt: Date; metadata: unknown }) => f.savedAt > sevenDaysAgoFav);
     if (recentWeekFavorites.length >= 3 && currentFlavor) {
       // Check if there's a dominant flavor pattern
       const metadataFlavors: string[] = [];
@@ -48,8 +48,8 @@ export async function checkAndTriggerEvolution(
         if (meta?.cuisine) metadataFlavors.push(String(meta.cuisine));
       }
       const flavorCount: Record<string, number> = {};
-      for (const f of metadataFlavors) {
-        flavorCount[f] = (flavorCount[f] ?? 0) + 1;
+      for (const fl of metadataFlavors) {
+        flavorCount[fl] = (flavorCount[fl] ?? 0) + 1;
       }
       const hasDominant = Object.values(flavorCount).some((c) => c >= 3);
       if (hasDominant) {
@@ -87,7 +87,7 @@ export async function checkAndTriggerEvolution(
       include: { recipe: { select: { cuisineInspiration: true } } },
     });
 
-    const cuisineFreq = (items: typeof recentHistory) => {
+    const cuisineFreq = (items: Array<{ recipe: { cuisineInspiration: string | null } }>) => {
       const freq: Record<string, number> = {};
       for (const h of items) {
         const c = h.recipe.cuisineInspiration;
@@ -97,12 +97,7 @@ export async function checkAndTriggerEvolution(
     };
 
     const recentCuisines = cuisineFreq(recentHistory);
-    const priorCuisines = cuisineFreq(
-      priorHistory.map((h) => ({
-        ...h,
-        recipe: { ...h.recipe, cuisineInspiration: h.recipe.cuisineInspiration ?? '', flavorProfile: null as unknown as object, fingerprint: null as unknown as object },
-      }))
-    );
+    const priorCuisines = cuisineFreq(priorHistory);
 
     const recentTop = Object.entries(recentCuisines).sort((a, b) => b[1] - a[1])[0]?.[0];
     const priorTop = Object.entries(priorCuisines).sort((a, b) => b[1] - a[1])[0]?.[0];

@@ -4,6 +4,7 @@ import { anthropic } from '../lib/anthropic';
 import prisma from '../lib/prisma';
 import { checkDietaryGuardrails } from '../services/dietary/guardrail';
 import { checkFingerprintSimilarity } from '../services/recipe/fingerprint';
+import { checkAndTriggerEvolution } from '../services/genome/evolutionTrigger';
 import type { RecipeFingerprint, GeneratedRecipe } from '@savora/shared-types';
 
 const router = Router();
@@ -235,6 +236,9 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
     };
 
     res.json(responseRecipe);
+
+    // Fire-and-forget evolution trigger
+    checkAndTriggerEvolution(userId, prisma).catch(() => {});
   } catch (err) {
     console.error('Recipe generation error:', err);
     res.status(500).json({ error: 'Failed to generate recipe' });

@@ -3,6 +3,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { anthropic } from '../lib/anthropic';
 import prisma from '../lib/prisma';
 import { checkDietaryGuardrails } from '../services/dietary/guardrail';
+import { checkAndTriggerEvolution } from '../services/genome/evolutionTrigger';
 
 const router = Router();
 
@@ -170,6 +171,9 @@ Max 5 restaurants, max 3 dishes per restaurant.`;
     });
 
     res.json(result);
+
+    // Fire-and-forget evolution trigger
+    checkAndTriggerEvolution(userId, prisma).catch(() => {});
   } catch (err) {
     console.error('City discovery error:', err);
     res.status(500).json({ error: 'Failed to generate city discovery' });
