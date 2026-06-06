@@ -123,7 +123,7 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
     const recentFingerprints: RecipeFingerprint[] = [
       ...excludeFingerprints,
       ...recentHistoryItems
-        .map((h) => h.recipe.fingerprint as unknown as RecipeFingerprint)
+        .map((h: { recipe: { fingerprint: unknown } }) => h.recipe.fingerprint as unknown as RecipeFingerprint)
         .filter(Boolean),
     ];
 
@@ -278,7 +278,8 @@ router.get('/history', authMiddleware, async (req: AuthRequest, res: Response): 
       include: { recipe: true },
     });
 
-    const recipes: GeneratedRecipe[] = historyItems.map((h) => {
+    type HistoryItemWithRecipe = { recipe: { id: string; title: string; description: string; mood: string; cuisineInspiration: string; dietaryType: string; ingredients: unknown; steps: unknown; prepTime: number; cookTime: number; totalTime: number; difficulty: string; platingSuggestion: string; pairingSuggestion: string; whyThisFits: string; flavorProfile: unknown; fingerprint: unknown } };
+    const recipes: GeneratedRecipe[] = historyItems.map((h: HistoryItemWithRecipe) => {
       const r = h.recipe;
       const ingredients = r.ingredients as unknown as GeneratedRecipe['ingredients'];
       const steps = r.steps as unknown as GeneratedRecipe['steps'];
