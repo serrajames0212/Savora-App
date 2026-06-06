@@ -1,6 +1,99 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { useRegister } from '../hooks/useAuth';
+
+const EyeIcon = ({ open }: { open: boolean }) =>
+  open ? (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  ) : (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+      <line x1="1" y1="1" x2="23" y2="23"/>
+    </svg>
+  );
 
 const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { mutate: register, isPending, error } = useRegister();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const serverError = error
+    ? (error as { response?: { data?: { error?: string } } }).response?.data?.error ?? 'Registration failed. Please try again.'
+    : null;
+
+  const displayError = validationError ?? serverError;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationError(null);
+
+    if (!name.trim()) {
+      setValidationError('Name is required.');
+      return;
+    }
+    if (password.length < 8) {
+      setValidationError('Password must be at least 8 characters.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setValidationError('Passwords do not match.');
+      return;
+    }
+
+    register(
+      { name: name.trim(), email, password },
+      {
+        onSuccess: () => {
+          navigate('/onboarding', { replace: true });
+        },
+      }
+    );
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '48px',
+    backgroundColor: 'var(--color-bg-surface)',
+    border: '1px solid var(--color-border-medium)',
+    borderRadius: 'var(--radius-md)',
+    padding: '0 var(--space-4)',
+    fontFamily: 'var(--font-body)',
+    fontSize: '15px',
+    color: 'var(--color-text-primary)',
+    outline: 'none',
+    transition: 'border-color var(--duration-fast) var(--ease-out-expo)',
+    boxSizing: 'border-box',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontFamily: 'var(--font-body)',
+    fontSize: '13px',
+    color: 'var(--color-text-secondary)',
+    marginBottom: 'var(--space-2)',
+    letterSpacing: '0.03em',
+  };
+
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--color-accent-primary)';
+  };
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = 'var(--color-border-medium)';
+  };
+
   return (
     <div
       style={{
@@ -8,12 +101,198 @@ const RegisterPage: React.FC = () => {
         alignItems: 'center',
         justifyContent: 'center',
         minHeight: '100vh',
-        fontFamily: 'var(--font-display)',
-        fontSize: '24px',
-        color: 'var(--color-text-secondary)',
+        backgroundColor: 'var(--color-bg-base)',
+        padding: 'var(--space-6)',
       }}
     >
-      RegisterPage
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        {/* Wordmark */}
+        <div style={{ textAlign: 'center', marginBottom: 'var(--space-8)' }}>
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '32px',
+              fontWeight: 300,
+              color: 'var(--color-accent-primary)',
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            }}
+          >
+            savora
+          </span>
+        </div>
+
+        <Card variant="elevated">
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '26px',
+              fontWeight: 300,
+              color: 'var(--color-text-primary)',
+              margin: '0 0 var(--space-6)',
+              letterSpacing: '0.01em',
+            }}
+          >
+            Create your profile.
+          </h1>
+
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+            {/* Name */}
+            <div>
+              <label style={labelStyle}>Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                autoComplete="name"
+                placeholder="Your name"
+                style={inputStyle}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
+            </div>
+
+            {/* Email */}
+            <div>
+              <label style={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                placeholder="your@email.com"
+                style={inputStyle}
+                onFocus={onFocus}
+                onBlur={onBlur}
+              />
+            </div>
+
+            {/* Password */}
+            <div>
+              <label style={labelStyle}>Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Min. 8 characters"
+                  style={{ ...inputStyle, paddingRight: '48px' }}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-muted)',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  tabIndex={-1}
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
+              </div>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <label style={labelStyle}>Confirm Password</label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type={showConfirm ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  autoComplete="new-password"
+                  placeholder="Re-enter password"
+                  style={{ ...inputStyle, paddingRight: '48px' }}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-muted)',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  }}
+                  tabIndex={-1}
+                >
+                  <EyeIcon open={showConfirm} />
+                </button>
+              </div>
+            </div>
+
+            {/* Error */}
+            {displayError && (
+              <p
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '13px',
+                  color: 'rgba(252, 165, 165, 1)',
+                  margin: 0,
+                }}
+              >
+                {displayError}
+              </p>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              loading={isPending}
+              style={{ width: '100%', height: '48px' }}
+            >
+              Create profile
+            </Button>
+          </form>
+
+          <p
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              color: 'var(--color-text-muted)',
+              textAlign: 'center',
+              marginTop: 'var(--space-6)',
+              marginBottom: 0,
+            }}
+          >
+            Already have an account?{' '}
+            <Link
+              to="/login"
+              style={{
+                color: 'var(--color-accent-primary)',
+                textDecoration: 'none',
+              }}
+            >
+              Sign in →
+            </Link>
+          </p>
+        </Card>
+      </div>
     </div>
   );
 };
