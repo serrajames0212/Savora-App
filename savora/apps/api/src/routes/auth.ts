@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import prisma from '../lib/prisma';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -66,6 +67,20 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
     token,
   });
+});
+
+router.post('/me', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json({ user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt } });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
 });
 
 export default router;
