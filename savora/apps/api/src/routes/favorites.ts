@@ -22,7 +22,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise
 
     // For recipe favorites, join recipe data
     const enriched = await Promise.all(
-      favorites.map(async (fav) => {
+      favorites.map(async (fav: typeof favorites[number]) => {
         if (fav.itemType === 'recipe') {
           const recipe = await prisma.generatedRecipe.findUnique({
             where: { id: fav.itemId },
