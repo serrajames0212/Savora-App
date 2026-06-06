@@ -1,0 +1,146 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  dietaryProfile         DietaryProfile?
+  culinaryIdentityGenome CulinaryIdentityGenome?
+  flavorGenome           FlavorGenome?
+  recipeHistory          RecipeHistory[]
+  favorites              Favorite[]
+  subscription           Subscription?
+  genomeSnapshots        GenomeSnapshot[]
+}
+
+model DietaryProfile {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  restrictions String[]
+  dislikes     String[]
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model CulinaryIdentityGenome {
+  id                         String   @id @default(cuid())
+  userId                     String   @unique
+  identityTitle              String
+  identitySubtitle           String
+  cuisineAffinity            String[]
+  adventurousness            Float
+  comfortVsNovelty           Float
+  luxuryVsRustic             Float
+  complexityTolerance        Float
+  socialVsSolitary           Float
+  ritualVsSpontaneity        Float
+  finingDiningAffinity       Float
+  diningAtmospherePreference String[]
+  moodFoodRelationship       String
+  evolutionNote              String
+  updatedAt                  DateTime @updatedAt
+  user                       User     @relation(fields: [userId], references: [id])
+}
+
+model FlavorGenome {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  saltScore              Float
+  sweetScore             Float
+  bitterScore            Float
+  acidityScore           Float
+  heatScore              Float
+  aromaticSpiceScore     Float
+  umamiScore             Float
+  fatRichnessScore       Float
+  smokeCharScore         Float
+  fermentationScore      Float
+  mineralCleanScore      Float
+  aromaticIntensityScore Float
+  dominantFlavors        String[]
+  flavorPersonality      String
+  updatedAt              DateTime @updatedAt
+  user                   User     @relation(fields: [userId], references: [id])
+}
+
+model GeneratedRecipe {
+  id                 String   @id @default(cuid())
+  userId             String
+  title              String
+  description        String
+  mood               String
+  cuisineInspiration String
+  dietaryType        String
+  ingredients        Json
+  steps              Json
+  prepTime           Int
+  cookTime           Int
+  totalTime          Int
+  difficulty         String
+  platingSuggestion  String
+  pairingSuggestion  String
+  whyThisFits        String
+  flavorProfile      Json
+  fingerprint        Json
+  createdAt          DateTime @default(now())
+  history            RecipeHistory?
+  favorites          Favorite[]
+}
+
+model RecipeHistory {
+  id        String          @id @default(cuid())
+  userId    String
+  recipeId  String          @unique
+  createdAt DateTime        @default(now())
+  user      User            @relation(fields: [userId], references: [id])
+  recipe    GeneratedRecipe @relation(fields: [recipeId], references: [id])
+}
+
+model Favorite {
+  id       String          @id @default(cuid())
+  userId   String
+  itemType String
+  itemId   String
+  savedAt  DateTime        @default(now())
+  user     User            @relation(fields: [userId], references: [id])
+  recipe   GeneratedRecipe? @relation(fields: [itemId], references: [id])
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String    @unique
+  status           String    @default("free")
+  stripeCustomerId String?
+  renewalDate      DateTime?
+  updatedAt        DateTime  @updatedAt
+  user             User      @relation(fields: [userId], references: [id])
+}
+
+model GenomeSnapshot {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String
+  data      Json
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model DailyUsage {
+  id                String @id @default(cuid())
+  userId            String
+  date              String
+  recipeGenerations Int    @default(0)
+  citySearches      Int    @default(0)
+
+  @@unique([userId, date])
+}
