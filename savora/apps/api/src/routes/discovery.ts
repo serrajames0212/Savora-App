@@ -233,7 +233,7 @@ router.get('/recent', authMiddleware, async (req: AuthRequest, res: Response): P
       take: 5,
     });
 
-    res.json({ cities: recent.map((r) => r.city) });
+    res.json({ cities: recent.map((r: { city: string }) => r.city) });
   } catch (err) {
     console.error('Recent searches error:', err);
     res.status(500).json({ error: 'Failed to get recent searches' });
