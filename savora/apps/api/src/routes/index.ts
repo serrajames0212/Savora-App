@@ -8,11 +8,14 @@ import recipeRouter from './recipe';
 import discoveryRouter from './discovery';
 import favoritesRouter from './favorites';
 import memoryRouter from './memory';
+import evolutionRouter from './evolution';
+import subscriptionRouter from './subscription';
 
 const router = Router();
 
 router.use('/auth', authRouter);
 router.use('/genome', genomeRouter);
+router.use('/genome', evolutionRouter);
 router.use('/dietary', dietaryRouter);
 router.use('/insights', insightsRouter);
 router.use('/home', homeRouter);
@@ -20,5 +23,6 @@ router.use('/recipe', recipeRouter);
 router.use('/discovery', discoveryRouter);
 router.use('/favorites', favoritesRouter);
 router.use('/memory', memoryRouter);
+router.use('/subscription', subscriptionRouter);
 
 export default router;
