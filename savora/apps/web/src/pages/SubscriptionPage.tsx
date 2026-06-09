@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useSubscriptionStatus, useCheckout } from '../hooks/useSubscription';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import api from '../lib/api';
 
 const CheckIcon: React.FC = () => (
   <svg
@@ -213,9 +214,7 @@ const SubscriptionPage: React.FC = () => {
           <button
             onClick={async () => {
               try {
-                const { data } = await import('../lib/api').then((m) =>
-                  m.default.post<{ url: string }>('/subscription/portal')
-                );
+                const { data } = await api.post<{ url: string }>('/subscription/portal');
                 if (data.url && data.url !== '#') {
                   window.location.href = data.url;
                 }

@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import express from 'express';
+import 'express-async-errors';
+import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import routes from './routes';
 import { createStripeWebhookRouter } from './routes/subscription';
@@ -19,6 +20,27 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api', routes);
+
+// 404 handler for unmatched API routes
+app.use('/api', (_req: Request, res: Response) => {
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Global error handler — never expose raw errors, never crash the process
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  console.error('[API error]', err instanceof Error ? err.message : err);
+  if (res.headersSent) return;
+  res.status(500).json({ error: 'Something went wrong. Please try again.' });
+});
+
+// Safety net: log unexpected errors instead of letting them kill the server
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
 
 app.listen(PORT, () => {
   console.log(`Savora API running on port ${PORT}`);

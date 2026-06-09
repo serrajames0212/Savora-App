@@ -111,11 +111,15 @@ router.get('/journey', authMiddleware, async (req: AuthRequest, res: Response): 
         orderBy: { createdAt: 'desc' },
       }),
       prisma.favorite.findFirst({
-        where: { userId },
+        where: { userId, itemType: 'recipe' },
         orderBy: { savedAt: 'desc' },
-        include: { recipe: true },
       }),
     ]);
+
+    // Favorite has no relation — resolve the recipe by itemId when it's a recipe
+    const favoriteRecipe = lastFavorite
+      ? await prisma.generatedRecipe.findUnique({ where: { id: lastFavorite.itemId } })
+      : null;
 
     res.json({
       recentRecipe: lastRecipeHistory?.recipe
@@ -128,12 +132,12 @@ router.get('/journey', authMiddleware, async (req: AuthRequest, res: Response): 
         : null,
       recentCity: lastSearch?.city ?? null,
       lastMood: lastRecipeHistory?.recipe?.mood ?? null,
-      lastFavorite: lastFavorite?.recipe
+      lastFavorite: favoriteRecipe
         ? {
-            id: lastFavorite.recipe.id,
-            title: lastFavorite.recipe.title,
-            mood: lastFavorite.recipe.mood,
-            savedAt: lastFavorite.savedAt,
+            id: favoriteRecipe.id,
+            title: favoriteRecipe.title,
+            mood: favoriteRecipe.mood,
+            savedAt: lastFavorite!.savedAt,
           }
         : null,
     });

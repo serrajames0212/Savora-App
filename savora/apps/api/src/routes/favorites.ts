@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import prisma from '../lib/prisma';
 
@@ -82,7 +83,7 @@ router.post('/', authMiddleware, async (req: AuthRequest, res: Response): Promis
         userId,
         itemType,
         itemId,
-        metadata: metadata ?? null,
+        metadata: (metadata ?? Prisma.JsonNull) as Prisma.InputJsonValue,
       },
     });
 

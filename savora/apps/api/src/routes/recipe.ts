@@ -1,4 +1,5 @@
 import { Router, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { anthropic } from '../lib/anthropic';
 import prisma from '../lib/prisma';
@@ -201,8 +202,8 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
         platingSuggestion: recipe.platingSuggestion,
         pairingSuggestion: recipe.pairingSuggestion,
         whyThisFits: recipe.whyThisFits,
-        flavorProfile: recipe.flavorProfile,
-        fingerprint: recipe.fingerprint,
+        flavorProfile: recipe.flavorProfile as unknown as Prisma.InputJsonValue,
+        fingerprint: recipe.fingerprint as unknown as Prisma.InputJsonValue,
       },
     });
 
