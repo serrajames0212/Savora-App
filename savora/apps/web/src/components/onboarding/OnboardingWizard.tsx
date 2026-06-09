@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useGenomeStore } from '../../stores/useGenomeStore';
 import { useGenerateGenome } from '../../hooks/useGenerateGenome';
@@ -16,6 +17,7 @@ import Step7Flavors from './Step7Flavors';
 import Step8Generating from './Step8Generating';
 
 const TOTAL_STEPS = 8;
+const STORAGE_KEY = 'savora_onboarding_progress';
 
 interface WizardState {
   dietaryRestrictions: string[];
@@ -83,19 +85,166 @@ const DEFAULT_STATE: WizardState = {
   },
 };
 
+interface SavedProgress {
+  step: number;
+  data: WizardState;
+  savedAt: number;
+}
+
+// ─── Resume Prompt ───────────────────────────────────────────────────────────
+
+interface ResumePromptProps {
+  savedStep: number;
+  onResume: () => void;
+  onStartOver: () => void;
+}
+
+const ResumePrompt: React.FC<ResumePromptProps> = ({ savedStep, onResume, onStartOver }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.4 }}
+    style={{
+      minHeight: '100vh',
+      backgroundColor: 'var(--color-bg-base)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: 'var(--space-8)',
+    }}
+  >
+    <div
+      style={{
+        backgroundColor: 'var(--color-bg-surface)',
+        border: '1px solid var(--color-border-subtle)',
+        borderRadius: 'var(--radius-lg)',
+        padding: 'var(--space-8)',
+        maxWidth: '360px',
+        width: '100%',
+        textAlign: 'center',
+      }}
+    >
+      <h2
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.5rem',
+          color: 'var(--color-text-primary)',
+          margin: '0 0 var(--space-3)',
+          lineHeight: 1.2,
+        }}
+      >
+        Continue where you left off?
+      </h2>
+      <p
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          color: 'var(--color-text-muted)',
+          margin: '0 0 var(--space-8)',
+          lineHeight: 1.6,
+        }}
+      >
+        You were on step {savedStep} of 8.
+      </p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+        <button
+          onClick={onResume}
+          style={{
+            backgroundColor: 'var(--color-accent-primary)',
+            color: '#0f0f0f',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-4) var(--space-6)',
+            fontFamily: 'var(--font-label)',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Resume
+        </button>
+        <button
+          onClick={onStartOver}
+          style={{
+            backgroundColor: 'transparent',
+            color: 'var(--color-text-muted)',
+            border: '1px solid var(--color-border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-4) var(--space-6)',
+            fontFamily: 'var(--font-label)',
+            fontSize: '14px',
+            cursor: 'pointer',
+            letterSpacing: '0.04em',
+          }}
+        >
+          Start over
+        </button>
+      </div>
+    </div>
+  </motion.div>
+);
+
+// ─── Wizard ──────────────────────────────────────────────────────────────────
+
 const OnboardingWizard: React.FC = () => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<WizardState>(DEFAULT_STATE);
+  const [resumePrompt, setResumePrompt] = useState<SavedProgress | null>(null);
   const navigate = useNavigate();
   const setCulinaryIdentity = useGenomeStore((s) => s.setCulinaryIdentity);
   const setFlavorGenome = useGenomeStore((s) => s.setFlavorGenome);
   const { mutateAsync: generateGenome } = useGenerateGenome();
 
+  // On mount: check for saved progress
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const saved = JSON.parse(raw) as SavedProgress;
+        if (saved.step > 1) {
+          setResumePrompt(saved);
+        }
+      }
+    } catch {
+      // ignore corrupted storage
+    }
+  }, []);
+
+  // Save progress on every step change (except step 1 and step 8)
+  useEffect(() => {
+    if (step > 1 && step < TOTAL_STEPS) {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify({ step, data, savedAt: Date.now() })
+        );
+      } catch {
+        // ignore quota errors
+      }
+    }
+  }, [step, data]);
+
+  const handleResume = () => {
+    if (resumePrompt) {
+      setData(resumePrompt.data);
+      setStep(resumePrompt.step);
+    }
+    setResumePrompt(null);
+  };
+
+  const handleStartOver = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    setResumePrompt(null);
+    setStep(1);
+    setData(DEFAULT_STATE);
+  };
+
   const next = () => setStep((s) => Math.min(s + 1, TOTAL_STEPS));
   const back = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleGenerateGenome = async (onboardingData: OnboardingData) => {
-    // Fire dietary profile save in parallel
     await Promise.allSettled([
       api.post('/dietary/profile', {
         restrictions: onboardingData.dietaryRestrictions,
@@ -109,6 +258,8 @@ const OnboardingWizard: React.FC = () => {
     culinaryIdentity: import('@savora/shared-types').CulinaryIdentityGenome,
     flavorGenome: import('@savora/shared-types').FlavorGenome
   ) => {
+    // Clear saved progress after successful genome generation
+    localStorage.removeItem(STORAGE_KEY);
     setCulinaryIdentity(culinaryIdentity);
     setFlavorGenome(flavorGenome);
     navigate('/home');
@@ -122,6 +273,20 @@ const OnboardingWizard: React.FC = () => {
     diningContext: data.diningContext as OnboardingData['diningContext'],
     flavorScores: data.flavorScores,
   });
+
+  // Show resume prompt if applicable
+  if (resumePrompt) {
+    return (
+      <AnimatePresence mode="wait">
+        <ResumePrompt
+          key="resume"
+          savedStep={resumePrompt.step}
+          onResume={handleResume}
+          onStartOver={handleStartOver}
+        />
+      </AnimatePresence>
+    );
+  }
 
   // Step 1 has no progress bar (full-screen welcome)
   const showProgress = step > 1 && step < TOTAL_STEPS;

@@ -159,7 +159,7 @@ const GenomeReveal: React.FC<GenomeRevealProps> = ({ culinaryIdentity, flavorGen
             alignItems: 'center',
           }}
         >
-          <FlavorWheel scores={flavorGenome} size={180} />
+          <FlavorWheel scores={flavorGenome} size="sm" />
 
           <div style={{ width: '100%', marginTop: 'var(--space-4)' }}>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>

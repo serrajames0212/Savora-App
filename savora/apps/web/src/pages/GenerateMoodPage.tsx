@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGenerateRecipe, useFavoriteRecipe } from '../hooks/useRecipe';
@@ -8,15 +8,51 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import PaywallSheet from '../components/subscription/PaywallSheet';
+import api from '../lib/api';
+import RecipeExportMenu from '../components/recipe/RecipeExportMenu';
 
-// Loading subtext cycle
+const DAILY_COUNT_KEY = 'savora_daily_recipe_count';
+const PAYWALL_NUDGE_SESSION_KEY = 'savora_paywall_nudge_shown';
+
+// ─── Daily recipe count helpers ──────────────────────────────────────────────
+
+interface DailyCount {
+  date: string;
+  count: number;
+}
+
+function getTodayCount(): number {
+  try {
+    const raw = localStorage.getItem(DAILY_COUNT_KEY);
+    if (!raw) return 0;
+    const parsed = JSON.parse(raw) as DailyCount;
+    const today = new Date().toISOString().slice(0, 10);
+    if (parsed.date !== today) return 0;
+    return parsed.count;
+  } catch {
+    return 0;
+  }
+}
+
+function incrementTodayCount(): void {
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const current = getTodayCount();
+    localStorage.setItem(DAILY_COUNT_KEY, JSON.stringify({ date: today, count: current + 1 }));
+  } catch {
+    // ignore
+  }
+}
+
+// ─── Loading subtexts ────────────────────────────────────────────────────────
+
 const LOADING_SUBTEXTS = [
   'Reading your genome...',
   'Shaping the flavours...',
   'Almost ready...',
 ];
 
-const LoadingOverlay: React.FC = () => {
+const LoadingOverlay: React.FC<{ label?: string }> = ({ label = 'Crafting your recipe...' }) => {
   const [subtextIndex, setSubtextIndex] = useState(0);
 
   useEffect(() => {
@@ -44,7 +80,6 @@ const LoadingOverlay: React.FC = () => {
         gap: 'var(--space-6)',
       }}
     >
-      {/* Pulsing emblem */}
       <motion.div
         animate={{ scale: [1, 1.08, 1], opacity: [0.7, 1, 0.7] }}
         transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -73,7 +108,7 @@ const LoadingOverlay: React.FC = () => {
             marginBottom: 'var(--space-3)',
           }}
         >
-          Crafting your recipe...
+          {label}
         </div>
         <AnimatePresence mode="wait">
           <motion.div
@@ -96,20 +131,155 @@ const LoadingOverlay: React.FC = () => {
   );
 };
 
-// Cuisine icon SVG placeholder
+// ─── Discover flow ───────────────────────────────────────────────────────────
+
+const MOOD_LABELS: Record<string, string> = {
+  comfort: 'Comfort',
+  bold: 'Bold',
+  deep: 'Deep',
+  ritual: 'Ritual',
+  light: 'Light',
+  surprise: 'Surprise',
+};
+
+interface DiscoverRevealProps {
+  chosenMood: string;
+  reason: string;
+}
+
+const DiscoverReveal: React.FC<DiscoverRevealProps> = ({ chosenMood, reason }) => (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.5 }}
+    style={{
+      position: 'fixed',
+      inset: 0,
+      backgroundColor: 'var(--color-bg-base)',
+      zIndex: 100,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 'var(--space-5)',
+      padding: 'var(--space-8)',
+      textAlign: 'center',
+    }}
+  >
+    <motion.p
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: 0.1 }}
+      style={{
+        fontFamily: 'var(--font-body)',
+        fontSize: '16px',
+        color: 'var(--color-text-secondary)',
+        lineHeight: 1.65,
+        maxWidth: '340px',
+        margin: 0,
+      }}
+    >
+      Based on your recent patterns, tonight feels like{' '}
+      <strong style={{ color: 'var(--color-accent-primary)', fontWeight: 600 }}>
+        {MOOD_LABELS[chosenMood] ?? chosenMood}
+      </strong>.
+    </motion.p>
+    {reason && (
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '14px',
+          fontStyle: 'italic',
+          color: 'var(--color-text-muted)',
+          maxWidth: '320px',
+          margin: 0,
+          lineHeight: 1.6,
+        }}
+      >
+        {reason}
+      </motion.p>
+    )}
+  </motion.div>
+);
+
+// ─── Cuisine emblem ──────────────────────────────────────────────────────────
+
 const CuisineEmblem: React.FC = () => (
   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-primary)" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
     <path d="M3 11l19-9-9 19-2-8-8-2z" />
   </svg>
 );
 
+// ─── Soft paywall nudge ───────────────────────────────────────────────────────
+
+interface PaywallNudgeProps {
+  onOpen: () => void;
+}
+
+const PaywallNudge: React.FC<PaywallNudgeProps> = ({ onOpen }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.4 }}
+    style={{
+      borderLeft: '3px solid var(--color-accent-primary)',
+      backgroundColor: 'var(--color-bg-elevated)',
+      borderRadius: 'var(--radius-md)',
+      padding: 'var(--space-5)',
+      marginBottom: 'var(--space-5)',
+    }}
+  >
+    <p
+      style={{
+        fontFamily: 'var(--font-body)',
+        fontSize: '14px',
+        color: 'var(--color-text-secondary)',
+        margin: 0,
+        marginBottom: 'var(--space-3)',
+        lineHeight: 1.6,
+      }}
+    >
+      Reserve members get unlimited recipes tailored to your exact genome.
+    </p>
+    <button
+      onClick={onOpen}
+      style={{
+        background: 'none',
+        border: 'none',
+        padding: 0,
+        fontFamily: 'var(--font-label)',
+        fontSize: '13px',
+        color: 'var(--color-accent-primary)',
+        cursor: 'pointer',
+        letterSpacing: '0.04em',
+      }}
+    >
+      Unlock Reserve →
+    </button>
+  </motion.div>
+);
+
+// ─── Recipe view ──────────────────────────────────────────────────────────────
+
 interface RecipeViewProps {
   recipe: GeneratedRecipe;
   onGenerateAnother: () => void;
   isGenerating: boolean;
+  onOpenPaywall: () => void;
+  showNudge: boolean;
 }
 
-const RecipeView: React.FC<RecipeViewProps> = ({ recipe, onGenerateAnother, isGenerating }) => {
+const RecipeView: React.FC<RecipeViewProps> = ({
+  recipe,
+  onGenerateAnother,
+  isGenerating,
+  onOpenPaywall,
+  showNudge,
+}) => {
   const navigate = useNavigate();
   const favoriteMutation = useFavoriteRecipe();
   const [isFavorited, setIsFavorited] = useState(false);
@@ -140,7 +310,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({ recipe, onGenerateAnother, isGe
         paddingBottom: '160px',
       }}
     >
-      {/* Back button */}
+      {/* Back button + export menu */}
       <div
         style={{
           position: 'sticky',
@@ -149,6 +319,9 @@ const RecipeView: React.FC<RecipeViewProps> = ({ recipe, onGenerateAnother, isGe
           backgroundColor: 'var(--color-bg-base)',
           padding: 'var(--space-4) var(--space-5)',
           borderBottom: '1px solid var(--color-border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
         }}
       >
         <button
@@ -168,6 +341,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({ recipe, onGenerateAnother, isGe
         >
           ← Back
         </button>
+        <RecipeExportMenu recipeId={recipe.id} />
       </div>
 
       <div style={{ maxWidth: '480px', margin: '0 auto', padding: '0 var(--space-5)' }}>
@@ -580,6 +754,9 @@ const RecipeView: React.FC<RecipeViewProps> = ({ recipe, onGenerateAnother, isGe
             </p>
           </Card>
         </motion.div>
+
+        {/* Soft paywall nudge — shown after 2nd recipe, once per session */}
+        {showNudge && <PaywallNudge onOpen={onOpenPaywall} />}
       </div>
 
       {/* Sticky action row */}
@@ -618,20 +795,44 @@ const RecipeView: React.FC<RecipeViewProps> = ({ recipe, onGenerateAnother, isGe
   );
 };
 
+// ─── Main page ────────────────────────────────────────────────────────────────
+
 const GenerateMoodPage: React.FC = () => {
   const { mood = 'comfort' } = useParams<{ mood: string }>();
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [showNudge, setShowNudge] = useState(false);
   const generateMutation = useGenerateRecipe();
   const setCurrentRecipe = useRecipeStore((s) => s.setCurrentRecipe);
 
-  const generate = (excludeFingerprints?: GeneratedRecipe['fingerprint'][]) => {
+  // Discover flow state
+  const [discoverPhase, setDiscoverPhase] = useState<
+    'idle' | 'loading' | 'reveal' | 'generating'
+  >('idle');
+  const [resolvedMood, setResolvedMood] = useState<string>('comfort');
+  const [discoverReason, setDiscoverReason] = useState<string>('');
+  const isDiscover = mood === 'discover';
+  const revealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const checkAndSetNudge = () => {
+    const alreadyShown = sessionStorage.getItem(PAYWALL_NUDGE_SESSION_KEY);
+    if (alreadyShown) return;
+    const count = getTodayCount();
+    if (count >= 2) {
+      setShowNudge(true);
+      sessionStorage.setItem(PAYWALL_NUDGE_SESSION_KEY, '1');
+    }
+  };
+
+  const doGenerate = (moodSlug: string, excludeFingerprints?: GeneratedRecipe['fingerprint'][]) => {
     generateMutation.mutate(
-      { mood, excludeFingerprints },
+      { mood: moodSlug, excludeFingerprints },
       {
         onSuccess: (data) => {
+          incrementTodayCount();
           setRecipe(data);
           setCurrentRecipe(data);
+          checkAndSetNudge();
         },
         onError: (err: unknown) => {
           const axiosErr = err as { response?: { status?: number } };
@@ -643,26 +844,86 @@ const GenerateMoodPage: React.FC = () => {
     );
   };
 
-  // Trigger on mount
+  // Run discover flow
   useEffect(() => {
-    generate();
+    if (!isDiscover) return;
+
+    setDiscoverPhase('loading');
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 1500));
+
+    const fetchMood = api
+      .post<{ mood: string; reason: string }>('/mood/auto-select')
+      .then((res) => res.data);
+
+    Promise.all([minDelay, fetchMood])
+      .then(([, result]) => {
+        setResolvedMood(result.mood);
+        setDiscoverReason(result.reason);
+        setDiscoverPhase('reveal');
+        revealTimerRef.current = setTimeout(() => {
+          setDiscoverPhase('generating');
+          doGenerate(result.mood);
+        }, 2000);
+      })
+      .catch(() => {
+        // Fallback to comfort on error
+        setResolvedMood('comfort');
+        setDiscoverPhase('reveal');
+        revealTimerRef.current = setTimeout(() => {
+          setDiscoverPhase('generating');
+          doGenerate('comfort');
+        }, 2000);
+      });
+
+    return () => {
+      if (revealTimerRef.current) clearTimeout(revealTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDiscover]);
+
+  // Normal mood: trigger on mount
+  useEffect(() => {
+    if (isDiscover) return;
+    doGenerate(mood);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleGenerateAnother = () => {
+    const activeMood = isDiscover ? resolvedMood : mood;
     if (recipe) {
-      generate([recipe.fingerprint]);
+      doGenerate(activeMood, [recipe.fingerprint]);
     } else {
-      generate();
+      doGenerate(activeMood);
     }
   };
 
-  const isLoading = generateMutation.isPending && !recipe;
+  const isLoadingRecipe = generateMutation.isPending && !recipe;
 
   return (
     <>
+      {/* Discover: reading profile phase */}
       <AnimatePresence>
-        {isLoading && <LoadingOverlay key="loading" />}
+        {isDiscover && discoverPhase === 'loading' && (
+          <LoadingOverlay key="discover-loading" label="Reading your profile..." />
+        )}
+      </AnimatePresence>
+
+      {/* Discover: mood reveal phase */}
+      <AnimatePresence>
+        {isDiscover && discoverPhase === 'reveal' && (
+          <DiscoverReveal
+            key="discover-reveal"
+            chosenMood={resolvedMood}
+            reason={discoverReason}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Recipe loading (normal or after discover) */}
+      <AnimatePresence>
+        {isLoadingRecipe && (discoverPhase === 'generating' || !isDiscover) && (
+          <LoadingOverlay key="loading" />
+        )}
       </AnimatePresence>
 
       <AnimatePresence mode="wait">
@@ -672,6 +933,8 @@ const GenerateMoodPage: React.FC = () => {
             recipe={recipe}
             onGenerateAnother={handleGenerateAnother}
             isGenerating={generateMutation.isPending}
+            onOpenPaywall={() => setShowPaywall(true)}
+            showNudge={showNudge}
           />
         )}
       </AnimatePresence>

@@ -268,4 +268,128 @@ router.post(
   }
 );
 
+// POST /api/genome/recalibrate — re-runs genome generation with existing data + updated dietary profile
+router.post('/recalibrate', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+
+  try {
+    const [existingIdentity, existingFlavor, dietaryProfile] = await Promise.all([
+      prisma.culinaryIdentityGenome.findUnique({ where: { userId } }),
+      prisma.flavorGenome.findUnique({ where: { userId } }),
+      prisma.dietaryProfile.findUnique({ where: { userId } }),
+    ]);
+
+    if (!existingIdentity || !existingFlavor) {
+      res.status(404).json({ error: 'Genome not found. Complete onboarding first.' });
+      return;
+    }
+
+    const behaviorData = {
+      dietaryRestrictions: dietaryProfile?.restrictions ?? [],
+      dislikes: dietaryProfile?.dislikes ?? [],
+      cuisineAffinity: existingIdentity.cuisineAffinity,
+      behaviorScores: {
+        adventurousness: existingIdentity.adventurousness,
+        comfortVsNovelty: existingIdentity.comfortVsNovelty,
+        luxuryVsRustic: existingIdentity.luxuryVsRustic,
+        complexityTolerance: existingIdentity.complexityTolerance,
+        cookingSkill: existingIdentity.complexityTolerance,
+      },
+      diningContext: {
+        social: existingIdentity.socialVsSolitary > 0.5 ? 'social' : 'solitary' as 'social' | 'solitary',
+        ritual: existingIdentity.ritualVsSpontaneity > 0.5 ? 'ritual' : 'spontaneous' as 'ritual' | 'spontaneous',
+        formality: existingIdentity.finingDiningAffinity > 0.5 ? 'fineDining' : 'casual' as 'casual' | 'fineDining',
+        pace: 'slow' as const,
+      },
+      flavorScores: {
+        saltScore: existingFlavor.saltScore,
+        sweetScore: existingFlavor.sweetScore,
+        bitterScore: existingFlavor.bitterScore,
+        acidityScore: existingFlavor.acidityScore,
+        heatScore: existingFlavor.heatScore,
+        aromaticSpiceScore: existingFlavor.aromaticSpiceScore,
+        umamiScore: existingFlavor.umamiScore,
+        fatRichnessScore: existingFlavor.fatRichnessScore,
+        smokeCharScore: existingFlavor.smokeCharScore,
+        fermentationScore: existingFlavor.fermentationScore,
+        mineralCleanScore: existingFlavor.mineralCleanScore,
+        aromaticIntensityScore: existingFlavor.aromaticIntensityScore,
+      },
+    };
+
+    const userMessage = JSON.stringify(behaviorData, null, 2);
+
+    const [culinaryIdentity, flavorGenome] = await Promise.all([
+      callClaudeWithRetry<CulinaryIdentityResult>(CULINARY_IDENTITY_SYSTEM, userMessage),
+      callClaudeWithRetry<FlavorGenomeResult>(FLAVOR_GENOME_SYSTEM, userMessage),
+    ]);
+
+    const [savedIdentity, savedFlavor] = await Promise.all([
+      prisma.culinaryIdentityGenome.update({
+        where: { userId },
+        data: {
+          identityTitle: culinaryIdentity.identityTitle,
+          identitySubtitle: culinaryIdentity.identitySubtitle,
+          cuisineAffinity: culinaryIdentity.cuisineAffinity,
+          adventurousness: culinaryIdentity.behaviorScores.adventurousness,
+          comfortVsNovelty: culinaryIdentity.behaviorScores.comfortVsNovelty,
+          luxuryVsRustic: culinaryIdentity.behaviorScores.luxuryVsRustic,
+          complexityTolerance: culinaryIdentity.behaviorScores.complexityTolerance,
+          socialVsSolitary: culinaryIdentity.behaviorScores.socialVsSolitary,
+          ritualVsSpontaneity: culinaryIdentity.behaviorScores.ritualVsSpontaneity,
+          finingDiningAffinity: culinaryIdentity.behaviorScores.finingDiningAffinity,
+          diningAtmospherePreference: culinaryIdentity.diningAtmospherePreference,
+          moodFoodRelationship: culinaryIdentity.moodFoodRelationship,
+          evolutionNote: culinaryIdentity.evolutionNote,
+        },
+      }),
+      prisma.flavorGenome.update({
+        where: { userId },
+        data: { ...flavorGenome },
+      }),
+    ]);
+
+    res.json({
+      culinaryIdentity: {
+        userId: savedIdentity.userId,
+        identityTitle: savedIdentity.identityTitle,
+        identitySubtitle: savedIdentity.identitySubtitle,
+        cuisineAffinity: savedIdentity.cuisineAffinity,
+        behaviorScores: {
+          adventurousness: savedIdentity.adventurousness,
+          comfortVsNovelty: savedIdentity.comfortVsNovelty,
+          luxuryVsRustic: savedIdentity.luxuryVsRustic,
+          complexityTolerance: savedIdentity.complexityTolerance,
+          socialVsSolitary: savedIdentity.socialVsSolitary,
+          ritualVsSpontaneity: savedIdentity.ritualVsSpontaneity,
+          finingDiningAffinity: savedIdentity.finingDiningAffinity,
+        },
+        diningAtmospherePreference: savedIdentity.diningAtmospherePreference,
+        moodFoodRelationship: savedIdentity.moodFoodRelationship,
+        evolutionNote: savedIdentity.evolutionNote,
+      },
+      flavorGenome: {
+        userId: savedFlavor.userId,
+        saltScore: savedFlavor.saltScore,
+        sweetScore: savedFlavor.sweetScore,
+        bitterScore: savedFlavor.bitterScore,
+        acidityScore: savedFlavor.acidityScore,
+        heatScore: savedFlavor.heatScore,
+        aromaticSpiceScore: savedFlavor.aromaticSpiceScore,
+        umamiScore: savedFlavor.umamiScore,
+        fatRichnessScore: savedFlavor.fatRichnessScore,
+        smokeCharScore: savedFlavor.smokeCharScore,
+        fermentationScore: savedFlavor.fermentationScore,
+        mineralCleanScore: savedFlavor.mineralCleanScore,
+        aromaticIntensityScore: savedFlavor.aromaticIntensityScore,
+        dominantFlavors: savedFlavor.dominantFlavors,
+        flavorPersonality: savedFlavor.flavorPersonality,
+      },
+    });
+  } catch (err) {
+    console.error('Genome recalibrate error:', err);
+    res.status(500).json({ error: 'Failed to recalibrate genome' });
+  }
+});
+
 export default router;

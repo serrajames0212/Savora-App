@@ -146,7 +146,14 @@ Max 5 restaurants, max 3 dishes per restaurant.`;
           const guardrailResult = checkDietaryGuardrails({ ingredients }, profile);
           return guardrailResult.passed;
         });
-        return { ...restaurant, suggestedDishes: filteredDishes };
+        // Cap matchScore and add isAiGenerated flag
+        const cappedScore = Math.min(restaurant.matchScore, 85);
+        return {
+          ...restaurant,
+          matchScore: cappedScore,
+          suggestedDishes: filteredDishes,
+          isAiGenerated: true,
+        };
       });
 
       result = { ...raw, restaurants: filteredRestaurants };
@@ -170,7 +177,7 @@ Max 5 restaurants, max 3 dishes per restaurant.`;
       create: { userId, date: today, citySearches: 1 },
     });
 
-    res.json(result);
+    res.json({ ...result, aiDisclaimer: true });
 
     // Fire-and-forget evolution trigger
     checkAndTriggerEvolution(userId, prisma).catch(() => {});

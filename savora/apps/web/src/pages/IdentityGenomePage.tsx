@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useGenomeStore } from '../stores/useGenomeStore';
@@ -6,6 +6,7 @@ import { useEvolution, useIdentityWhy, type EvolutionData, type GatedEvolutionRe
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
+import PaywallSheet from '../components/subscription/PaywallSheet';
 
 const BEHAVIOR_AXES: { key: keyof NonNullable<ReturnType<typeof useGenomeStore.getState>['culinaryIdentity']>['behaviorScores']; label: string; dual?: [string, string] }[] = [
   { key: 'adventurousness', label: 'Adventurousness' },
@@ -56,6 +57,7 @@ const IdentityGenomePage: React.FC = () => {
   const culinaryIdentity = useGenomeStore((s) => s.culinaryIdentity);
   const { data: evolutionData, isLoading: evolutionLoading } = useEvolution();
   const { data: whyData, isLoading: whyLoading } = useIdentityWhy();
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   if (!culinaryIdentity) {
     return (
@@ -363,28 +365,55 @@ const IdentityGenomePage: React.FC = () => {
             }}
           />
         ) : isGated ? (
-          <Card variant="surface">
-            <div style={{ textAlign: 'center', padding: 'var(--space-2) 0' }}>
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '14px',
-                  color: 'var(--color-text-secondary)',
-                  marginBottom: 'var(--space-4)',
-                  lineHeight: 1.5,
-                }}
-              >
-                Taste evolution tracking is a Savora Reserve feature.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/profile/subscription')}
-              >
-                Upgrade to Reserve
-              </Button>
-            </div>
-          </Card>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            onClick={() => setPaywallOpen(true)}
+            style={{
+              backgroundColor: 'var(--color-bg-elevated)',
+              border: '1px solid var(--color-border-subtle)',
+              borderLeft: '3px solid var(--color-accent-primary)',
+              borderRadius: 'var(--radius-md)',
+              padding: 'var(--space-5)',
+              cursor: 'pointer',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '15px',
+                color: 'var(--color-text-primary)',
+                margin: 0,
+                marginBottom: 'var(--space-2)',
+                lineHeight: 1.3,
+              }}
+            >
+              Your taste is always changing.
+            </p>
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '13px',
+                color: 'var(--color-text-muted)',
+                margin: 0,
+                marginBottom: 'var(--space-3)',
+                lineHeight: 1.55,
+              }}
+            >
+              See how your palate has shifted over time — which flavours you've grown into, and which you've left behind.
+            </p>
+            <span
+              style={{
+                fontFamily: 'var(--font-label)',
+                fontSize: '12px',
+                color: 'var(--color-accent-primary)',
+                letterSpacing: '0.04em',
+              }}
+            >
+              See how your taste has changed · Reserve
+            </span>
+          </motion.div>
         ) : evolution ? (
           <>
             {!evolution.hasEnoughData && evolution.dataNote && (
@@ -483,6 +512,8 @@ const IdentityGenomePage: React.FC = () => {
           </>
         ) : null}
       </section>
+
+      <PaywallSheet isOpen={paywallOpen} onClose={() => setPaywallOpen(false)} />
     </div>
   );
 };

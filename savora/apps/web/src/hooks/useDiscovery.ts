@@ -18,6 +18,7 @@ export interface DiscoveryRestaurant {
   matchScore: number;
   whyThisFits: string;
   suggestedDishes: SuggestedDish[];
+  isAiGenerated?: boolean;
 }
 
 export interface CityData {
@@ -25,6 +26,7 @@ export interface CityData {
   seasonalNote: string;
   restaurants: DiscoveryRestaurant[];
   limitedCoverageNote: string | null;
+  aiDisclaimer?: boolean;
 }
 
 export function useCityData(city: string) {

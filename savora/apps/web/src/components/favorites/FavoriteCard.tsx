@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '../ui/Badge';
 import { useRemoveFavorite } from '../../hooks/useFavorites';
 import type { Favorite } from '@savora/shared-types';
+import api from '../../lib/api';
+import { useToastStore } from '../../stores/useToastStore';
 
 interface FavoriteCardProps {
   favorite: Favorite;
@@ -37,6 +39,23 @@ export const FavoriteCard: React.FC<FavoriteCardProps> = ({ favorite }) => {
   const [error, setError] = useState<string | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef<number>(0);
+  const addToast = useToastStore((s) => s.addToast);
+
+  const handleCopyRecipe = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowRemove(false);
+    if (!favorite.itemId) return;
+    try {
+      const response = await api.get(`/export/recipe/${favorite.itemId}/text`, {
+        responseType: 'text',
+      });
+      const text = typeof response.data === 'string' ? response.data : String(response.data);
+      await navigator.clipboard.writeText(text);
+      addToast('Recipe copied to clipboard', 'success');
+    } catch {
+      addToast('Failed to copy recipe', 'error');
+    }
+  };
 
   const title =
     favorite.recipe?.title ??
@@ -114,7 +133,7 @@ export const FavoriteCard: React.FC<FavoriteCardProps> = ({ favorite }) => {
           overflow: 'hidden',
           cursor: 'pointer',
           boxShadow: 'var(--shadow-card)',
-          transform: showRemove ? 'translateX(-72px)' : 'translateX(0)',
+          transform: showRemove ? (favorite.itemType === 'recipe' ? 'translateX(-136px)' : 'translateX(-72px)') : 'translateX(0)',
           transition: 'transform 0.25s var(--ease-in-out-smooth)',
         }}
       >
@@ -182,41 +201,76 @@ export const FavoriteCard: React.FC<FavoriteCardProps> = ({ favorite }) => {
         </div>
       </div>
 
-      {/* Remove button revealed on swipe/long press */}
+      {/* Action buttons revealed on swipe/long press */}
       <AnimatePresence>
         {showRemove && (
-          <motion.button
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={handleRemove}
             style={{
               position: 'absolute',
               right: 0,
               top: 0,
               bottom: 0,
-              width: '64px',
-              background: 'rgba(180, 60, 60, 0.85)',
-              border: 'none',
-              color: '#fff',
-              fontFamily: 'var(--font-label)',
-              fontSize: '11px',
-              fontWeight: 500,
-              cursor: 'pointer',
               display: 'flex',
               flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '4px',
               borderRadius: '0 var(--radius-md) var(--radius-md) 0',
-              letterSpacing: '0.04em',
+              overflow: 'hidden',
+              width: favorite.itemType === 'recipe' ? '128px' : '64px',
             }}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 4h10M6 4V3h4v1M5 4v8h6V4H5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            Remove
-          </motion.button>
+            {favorite.itemType === 'recipe' && (
+              <button
+                onClick={handleCopyRecipe}
+                style={{
+                  flex: 1,
+                  background: 'rgba(60, 100, 160, 0.85)',
+                  border: 'none',
+                  color: '#fff',
+                  fontFamily: 'var(--font-label)',
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '4px',
+                  letterSpacing: '0.04em',
+                  width: '64px',
+                }}
+              >
+                📋
+                Copy
+              </button>
+            )}
+            <button
+              onClick={handleRemove}
+              style={{
+                flex: 1,
+                background: 'rgba(180, 60, 60, 0.85)',
+                border: 'none',
+                color: '#fff',
+                fontFamily: 'var(--font-label)',
+                fontSize: '11px',
+                fontWeight: 500,
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                letterSpacing: '0.04em',
+                width: '64px',
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 4h10M6 4V3h4v1M5 4v8h6V4H5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Remove
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
 

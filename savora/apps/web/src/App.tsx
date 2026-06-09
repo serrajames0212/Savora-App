@@ -21,6 +21,7 @@ import IdentityGenomePage from './pages/IdentityGenomePage';
 import FlavorGenomePage from './pages/FlavorGenomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import DietaryProfilePage from './pages/DietaryProfilePage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -79,6 +80,7 @@ const App: React.FC = () => {
             <Route path="/profile/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
             <Route path="/genome/identity" element={<ProtectedRoute><IdentityGenomePage /></ProtectedRoute>} />
             <Route path="/genome/flavor" element={<ProtectedRoute><FlavorGenomePage /></ProtectedRoute>} />
+            <Route path="/profile/dietary" element={<ProtectedRoute><DietaryProfilePage /></ProtectedRoute>} />
           </Routes>
         </AppLayout>
       </BrowserRouter>

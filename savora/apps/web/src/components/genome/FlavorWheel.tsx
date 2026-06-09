@@ -1,7 +1,7 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-interface FlavorScores {
+export interface FlavorScores {
   saltScore: number;
   sweetScore: number;
   bitterScore: number;
@@ -18,7 +18,7 @@ interface FlavorScores {
 
 interface FlavorWheelProps {
   scores: FlavorScores;
-  size?: number;
+  size?: 'sm' | 'lg';
 }
 
 const AXES: { key: keyof FlavorScores; label: string }[] = [
@@ -27,148 +27,131 @@ const AXES: { key: keyof FlavorScores; label: string }[] = [
   { key: 'bitterScore', label: 'Bitter' },
   { key: 'acidityScore', label: 'Acidity' },
   { key: 'heatScore', label: 'Heat' },
-  { key: 'aromaticSpiceScore', label: 'Spice' },
+  { key: 'aromaticSpiceScore', label: 'Aromatic' },
   { key: 'umamiScore', label: 'Umami' },
-  { key: 'fatRichnessScore', label: 'Fat' },
+  { key: 'fatRichnessScore', label: 'Richness' },
   { key: 'smokeCharScore', label: 'Smoke' },
-  { key: 'fermentationScore', label: 'Ferment' },
+  { key: 'fermentationScore', label: 'Fermentation' },
   { key: 'mineralCleanScore', label: 'Mineral' },
-  { key: 'aromaticIntensityScore', label: 'Aroma' },
+  { key: 'aromaticIntensityScore', label: 'Intensity' },
 ];
 
 const TOTAL_AXES = 12;
-const CENTER = 100;
-const MAX_R = 70;
-const LABEL_R = 88;
 
-function polar(angle: number, r: number, cx = CENTER, cy = CENTER) {
+function polar(angle: number, r: number, cx: number, cy: number) {
   const rad = ((angle - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-export const FlavorWheel: React.FC<FlavorWheelProps> = ({ scores, size = 200 }) => {
+export const FlavorWheel: React.FC<FlavorWheelProps> = ({ scores, size = 'lg' }) => {
   const [tooltip, setTooltip] = useState<{ label: string; score: number; x: number; y: number } | null>(null);
-  const [animated, setAnimated] = useState(false);
-  const svgRef = useRef<SVGSVGElement>(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => setAnimated(true), 100);
-    return () => clearTimeout(t);
-  }, []);
+  const isLg = size === 'lg';
+  const viewBoxSize = isLg ? 400 : 200;
+  const cx = viewBoxSize / 2;
+  const cy = viewBoxSize / 2;
+  const maxRadius = isLg ? 140 : 70;
+  const dotR = isLg ? 3 : 2;
+  const labelRadius = maxRadius + 18;
 
-  const scale = size / 200;
+  // Build polygon points
+  const points = AXES.map((axis, i) => {
+    const angle = (i * 360) / TOTAL_AXES;
+    const score = scores[axis.key] ?? 0;
+    const r = (score / 100) * maxRadius;
+    return polar(angle, r, cx, cy);
+  });
+
+  const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(' ');
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block', width: size, height: size }}>
+    <div style={{ position: 'relative', display: 'inline-block', width: viewBoxSize, height: viewBoxSize }}>
       <svg
-        ref={svgRef}
-        viewBox="0 0 200 200"
-        width={size}
-        height={size}
-        style={{ display: 'block' }}
+        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+        width={viewBoxSize}
+        height={viewBoxSize}
+        style={{ display: 'block', overflow: 'visible' }}
       >
-        {/* Background rings */}
+        {/* Grid rings */}
         {[25, 50, 75, 100].map((pct) => (
           <circle
             key={pct}
-            cx={CENTER}
-            cy={CENTER}
-            r={(pct / 100) * MAX_R}
+            cx={cx}
+            cy={cy}
+            r={(pct / 100) * maxRadius}
             fill="none"
-            stroke="rgba(255,255,255,0.04)"
-            strokeWidth="0.5"
+            stroke="rgba(255,255,255,0.08)"
+            strokeWidth={1}
           />
         ))}
 
-        {/* Background axis lines */}
+        {/* Axis lines */}
         {AXES.map((_, i) => {
           const angle = (i * 360) / TOTAL_AXES;
-          const end = polar(angle, MAX_R);
+          const end = polar(angle, maxRadius, cx, cy);
           return (
             <line
               key={i}
-              x1={CENTER}
-              y1={CENTER}
+              x1={cx}
+              y1={cy}
               x2={end.x}
               y2={end.y}
-              stroke="rgba(255,255,255,0.08)"
-              strokeWidth="0.75"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth={1}
             />
           );
         })}
 
-        {/* Score lines with animation */}
-        {AXES.map((axis, i) => {
-          const angle = (i * 360) / TOTAL_AXES;
-          const score = scores[axis.key] ?? 0;
-          const r = (score / 100) * MAX_R;
-          const end = polar(angle, r);
-          const fullEnd = polar(angle, MAX_R);
-          const lineLen = Math.sqrt((fullEnd.x - CENTER) ** 2 + (fullEnd.y - CENTER) ** 2);
+        {/* Score polygon with Framer Motion fade-in */}
+        <motion.polygon
+          points={polygonPoints}
+          fill="rgba(201, 169, 110, 0.15)"
+          stroke="#c9a96e"
+          strokeWidth={2}
+          strokeLinejoin="round"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
+        />
 
+        {/* Score dots */}
+        {points.map((p, i) => {
+          const axis = AXES[i];
+          const score = scores[axis.key] ?? 0;
           return (
-            <g key={axis.key}>
-              <motion.line
-                x1={CENTER}
-                y1={CENTER}
-                x2={end.x}
-                y2={end.y}
-                stroke="var(--color-accent-primary)"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: animated ? 1 : 0, opacity: animated ? 1 : 0 }}
-                transition={{ duration: 0.8, delay: i * 0.06, ease: 'easeOut' }}
-              />
-              {/* Endpoint dot */}
-              <motion.circle
-                cx={end.x}
-                cy={end.y}
-                r={2.5}
-                fill="var(--color-accent-primary)"
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: animated ? 1 : 0, opacity: animated ? 1 : 0 }}
-                transition={{ duration: 0.3, delay: i * 0.06 + 0.7, ease: 'easeOut' }}
-              />
-              {/* Invisible hit area for tooltip */}
-              <line
-                x1={CENTER}
-                y1={CENTER}
-                x2={end.x}
-                y2={end.y}
-                stroke="transparent"
-                strokeWidth="8"
-                style={{ cursor: 'pointer' }}
-                onMouseEnter={(e) => {
-                  const rect = svgRef.current?.getBoundingClientRect();
-                  if (!rect) return;
-                  setTooltip({
-                    label: axis.label,
-                    score: score,
-                    x: (e.clientX - rect.left) / scale,
-                    y: (e.clientY - rect.top) / scale,
-                  });
-                }}
-                onMouseLeave={() => setTooltip(null)}
-                onTouchStart={() => {
-                  setTooltip({ label: axis.label, score, x: end.x, y: end.y });
-                  setTimeout(() => setTooltip(null), 1500);
-                }}
-              />
-            </g>
+            <circle
+              key={axis.key}
+              cx={p.x}
+              cy={p.y}
+              r={dotR}
+              fill="#c9a96e"
+              style={isLg ? { cursor: 'pointer' } : undefined}
+              onMouseEnter={isLg ? (e) => {
+                const svgEl = (e.target as SVGElement).closest('svg');
+                const rect = svgEl?.getBoundingClientRect();
+                if (!rect) return;
+                setTooltip({
+                  label: axis.label,
+                  score,
+                  x: p.x,
+                  y: p.y,
+                });
+              } : undefined}
+              onMouseLeave={isLg ? () => setTooltip(null) : undefined}
+              onTouchStart={isLg ? () => {
+                setTooltip({ label: axis.label, score, x: p.x, y: p.y });
+                setTimeout(() => setTooltip(null), 1500);
+              } : undefined}
+            />
           );
         })}
 
-        {/* Labels */}
-        {AXES.map((axis, i) => {
+        {/* Axis labels (lg only) */}
+        {isLg && AXES.map((axis, i) => {
           const angle = (i * 360) / TOTAL_AXES;
-          const pos = polar(angle, LABEL_R);
+          const pos = polar(angle, labelRadius, cx, cy);
           const textAnchor =
-            Math.abs(pos.x - CENTER) < 5
-              ? 'middle'
-              : pos.x < CENTER
-              ? 'end'
-              : 'start';
+            Math.abs(pos.x - cx) < 8 ? 'middle' : pos.x < cx ? 'end' : 'start';
           return (
             <text
               key={axis.key}
@@ -176,40 +159,54 @@ export const FlavorWheel: React.FC<FlavorWheelProps> = ({ scores, size = 200 }) 
               y={pos.y}
               textAnchor={textAnchor}
               dominantBaseline="middle"
-              fontSize="6.5"
-              fontFamily="var(--font-label)"
-              fill="rgba(255,255,255,0.5)"
+              fontSize="10"
+              fontFamily="'DM Mono', monospace"
+              fill="#b8b0a0"
+              style={{ cursor: 'pointer', userSelect: 'none' }}
+              onMouseEnter={() => {
+                const score = scores[axis.key] ?? 0;
+                setTooltip({ label: axis.label, score, x: pos.x, y: pos.y });
+              }}
+              onMouseLeave={() => setTooltip(null)}
             >
               {axis.label}
             </text>
           );
         })}
 
-        {/* Tooltip */}
-        {tooltip && (
-          <g>
-            <rect
-              x={tooltip.x - 22}
-              y={tooltip.y - 14}
-              width={44}
-              height={18}
-              rx={3}
-              fill="var(--color-bg-elevated)"
-              stroke="var(--color-accent-border)"
-              strokeWidth="0.5"
-            />
-            <text
-              x={tooltip.x}
-              y={tooltip.y - 5}
-              textAnchor="middle"
-              fontSize="5.5"
-              fontFamily="var(--font-label)"
-              fill="var(--color-accent-primary)"
-            >
-              {tooltip.label}: {tooltip.score}
-            </text>
-          </g>
-        )}
+        {/* Tooltip (lg only) */}
+        {isLg && tooltip && (() => {
+          const tooltipW = 100;
+          const tooltipH = 28;
+          // Clamp so tooltip stays inside viewBox
+          const tx = Math.min(Math.max(tooltip.x - tooltipW / 2, 4), viewBoxSize - tooltipW - 4);
+          const ty = tooltip.y - tooltipH - 8 < 0 ? tooltip.y + 8 : tooltip.y - tooltipH - 8;
+          return (
+            <g style={{ pointerEvents: 'none' }}>
+              <rect
+                x={tx}
+                y={ty}
+                width={tooltipW}
+                height={tooltipH}
+                rx={4}
+                fill="#1e1e1e"
+                stroke="#c9a96e"
+                strokeWidth={1}
+              />
+              <text
+                x={tx + tooltipW / 2}
+                y={ty + tooltipH / 2}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fontSize="10"
+                fontFamily="'DM Mono', monospace"
+                fill="#f5f0e8"
+              >
+                {tooltip.label} · {tooltip.score}
+              </text>
+            </g>
+          );
+        })()}
       </svg>
     </div>
   );

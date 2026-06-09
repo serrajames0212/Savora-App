@@ -6,6 +6,7 @@ import { Badge } from '../components/ui/Badge';
 import RestaurantCard from '../components/discovery/RestaurantCard';
 import PaywallSheet from '../components/subscription/PaywallSheet';
 import { useCityData } from '../hooks/useDiscovery';
+import { useIsReserve } from '../hooks/useIsReserve';
 
 function slugToCity(slug: string): string {
   return slug
@@ -91,6 +92,7 @@ const CityPage: React.FC = () => {
   const { city: citySlug = '' } = useParams<{ city: string }>();
   const cityName = slugToCity(citySlug);
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const isReserve = useIsReserve();
 
   const { data, isLoading, error } = useCityData(cityName);
 
@@ -171,6 +173,34 @@ const CityPage: React.FC = () => {
           )}
         </div>
 
+        {/* AI disclaimer notice */}
+        {data?.aiDisclaimer && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 'var(--space-3)',
+              padding: 'var(--space-3) var(--space-4)',
+              borderLeft: '3px solid var(--color-accent-primary)',
+              backgroundColor: 'var(--color-bg-surface)',
+              borderRadius: 'var(--radius-sm)',
+              marginBottom: 'var(--space-5)',
+            }}
+          >
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                color: 'var(--color-text-muted)',
+                margin: 0,
+                lineHeight: 1.55,
+              }}
+            >
+              Recommendations are AI-generated based on your genome. Verify restaurant details before visiting.
+            </p>
+          </div>
+        )}
+
         {/* Limited coverage note */}
         {data?.limitedCoverageNote && (
           <div
@@ -217,13 +247,64 @@ const CityPage: React.FC = () => {
         {/* Restaurant cards */}
         {data && data.restaurants.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-            {data.restaurants.map((restaurant) => (
-              <RestaurantCard
-                key={restaurant.slug}
-                restaurant={restaurant}
-                citySlug={citySlug}
-              />
-            ))}
+            {data.restaurants.map((restaurant, idx) => {
+              const isBlurred = !isReserve && idx >= 2;
+              return (
+                <div
+                  key={restaurant.slug}
+                  style={{ position: 'relative' }}
+                >
+                  <div style={isBlurred ? { pointerEvents: 'none', userSelect: 'none' } : undefined}>
+                    <RestaurantCard
+                      restaurant={restaurant}
+                      citySlug={citySlug}
+                    />
+                  </div>
+                  {isBlurred && (
+                    <div
+                      onClick={() => setPaywallOpen(true)}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backdropFilter: 'blur(6px)',
+                        backgroundColor: 'rgba(15,15,15,0.7)',
+                        borderRadius: 'var(--radius-md)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 'var(--space-2)',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <p
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '14px',
+                          color: 'var(--color-text-secondary)',
+                          margin: 0,
+                          textAlign: 'center',
+                          padding: '0 var(--space-6)',
+                          lineHeight: 1.55,
+                        }}
+                      >
+                        Reserve unlocks deeper discovery
+                      </p>
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-label)',
+                          fontSize: '12px',
+                          color: 'var(--color-accent-primary)',
+                          letterSpacing: '0.04em',
+                        }}
+                      >
+                        Unlock Reserve →
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

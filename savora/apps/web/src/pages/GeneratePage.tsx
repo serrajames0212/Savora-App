@@ -115,6 +115,70 @@ const MoodCard: React.FC<{ mood: MoodDef; onClick: () => void }> = ({ mood, onCl
   );
 };
 
+const EllipsisIcon: React.FC = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="5" cy="12" r="1.5" />
+    <circle cx="12" cy="12" r="1.5" />
+    <circle cx="19" cy="12" r="1.5" />
+  </svg>
+);
+
+const DiscoverCard: React.FC<{ onClick: () => void }> = ({ onClick }) => (
+  <motion.div
+    whileHover={{ scale: 1.01 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    style={{
+      gridColumn: '1 / -1',
+      minHeight: '100px',
+      backgroundColor: 'var(--color-bg-surface)',
+      border: '1px dashed var(--color-border-subtle)',
+      borderRadius: 'var(--radius-md)',
+      padding: 'var(--space-6)',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 'var(--space-5)',
+      transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+    }}
+    className="discover-card"
+  >
+    <style>{`
+      .discover-card:hover {
+        border-color: var(--color-accent-primary) !important;
+        box-shadow: var(--shadow-glow-accent) !important;
+      }
+      .discover-card:hover .discover-text { color: var(--color-text-primary) !important; }
+    `}</style>
+    <div style={{ color: 'var(--color-text-muted)' }}>
+      <EllipsisIcon />
+    </div>
+    <div>
+      <div
+        style={{
+          fontFamily: 'var(--font-display)',
+          fontSize: '1.2rem',
+          color: 'var(--color-text-primary)',
+          marginBottom: 'var(--space-1)',
+        }}
+      >
+        Discover Something New
+      </div>
+      <div
+        className="discover-text"
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          color: 'var(--color-text-muted)',
+          transition: 'color 0.2s ease',
+        }}
+      >
+        Let your genome decide.
+      </div>
+    </div>
+  </motion.div>
+);
+
 const GeneratePage: React.FC = () => {
   const navigate = useNavigate();
 
@@ -175,6 +239,15 @@ const GeneratePage: React.FC = () => {
               />
             </motion.div>
           ))}
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: MOODS.length * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            style={{ gridColumn: '1 / -1' }}
+          >
+            <DiscoverCard onClick={() => navigate('/generate/discover')} />
+          </motion.div>
         </div>
       </div>
     </div>

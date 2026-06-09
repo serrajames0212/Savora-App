@@ -8,6 +8,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import PaywallSheet from '../components/subscription/PaywallSheet';
 import type { MemoryChapter } from '@savora/shared-types';
+import { useIsReserve } from '../hooks/useIsReserve';
 
 // ─── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -313,6 +314,7 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 const MemoryVaultPage: React.FC = () => {
   const { data, isLoading, isError } = useMemoryVault();
   const [paywallOpen, setPaywallOpen] = useState(false);
+  const isReserve = useIsReserve();
 
   if (isLoading) {
     return (
@@ -415,9 +417,59 @@ const MemoryVaultPage: React.FC = () => {
       {hasChapters && (
         <section style={{ marginBottom: 'var(--space-10)' }}>
           <SectionLabel>Taste Chapters</SectionLabel>
-          {data.chapters.map((chapter, i) => (
-            <ChapterEntry key={i} chapter={chapter} index={i} />
-          ))}
+          {data.chapters.map((chapter, i) => {
+            const isBlurred = !isReserve && i > 0;
+            const isLastBlurred = !isReserve && i === data.chapters.length - 1 && i > 0;
+            return (
+              <div
+                key={i}
+                style={{ position: 'relative' }}
+              >
+                <div style={isBlurred ? { filter: 'blur(4px)', pointerEvents: 'none', userSelect: 'none' } : undefined}>
+                  <ChapterEntry chapter={chapter} index={i} />
+                </div>
+                {isLastBlurred && (
+                  <div
+                    onClick={() => setPaywallOpen(true)}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 'var(--space-2)',
+                      cursor: 'pointer',
+                      padding: 'var(--space-4)',
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '14px',
+                        color: 'var(--color-text-secondary)',
+                        margin: 0,
+                        textAlign: 'center',
+                        lineHeight: 1.55,
+                      }}
+                    >
+                      Reserve unlocks your full taste history
+                    </p>
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-label)',
+                        fontSize: '12px',
+                        color: 'var(--color-accent-primary)',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      Unlock Reserve →
+                    </span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </section>
       )}
 

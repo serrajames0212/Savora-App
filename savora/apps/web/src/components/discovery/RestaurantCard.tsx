@@ -48,6 +48,7 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, citySlug })
   const navigate = useNavigate();
   const [whyOpen, setWhyOpen] = useState(false);
   const [favorited, setFavorited] = useState(false);
+  const [aiTooltipOpen, setAiTooltipOpen] = useState(false);
 
   const handleCardClick = () => {
     navigate(`/discovery/${citySlug}/${restaurant.slug}`);
@@ -73,6 +74,54 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, citySlug })
 
   return (
     <Card variant="elevated">
+      {/* AI-generated badge */}
+      {restaurant.isAiGenerated && (
+        <div style={{ marginBottom: 'var(--space-3)' }}>
+          <button
+            onClick={(e) => { e.stopPropagation(); setAiTooltipOpen((o) => !o); }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              padding: '3px 8px',
+              border: '1px solid var(--color-border-medium)',
+              borderRadius: '999px',
+              background: 'none',
+              cursor: 'pointer',
+              fontSize: '10px',
+              fontFamily: 'var(--font-body)',
+              color: 'var(--color-text-muted)',
+            }}
+          >
+            <span style={{ fontSize: '10px' }}>ⓘ</span>
+            AI-suggested · Verify before visiting
+          </button>
+          <AnimatePresence>
+            {aiTooltipOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.2 }}
+                style={{
+                  marginTop: 'var(--space-2)',
+                  padding: 'var(--space-3)',
+                  backgroundColor: 'var(--color-bg-surface)',
+                  border: '1px solid var(--color-border-medium)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '12px',
+                  color: 'var(--color-text-muted)',
+                  lineHeight: 1.55,
+                }}
+              >
+                This recommendation is AI-generated based on your taste profile. Restaurant details have not been verified.
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* Header row */}
       <div style={{ position: 'relative', marginBottom: 'var(--space-3)' }}>
         {/* Match score — top right */}

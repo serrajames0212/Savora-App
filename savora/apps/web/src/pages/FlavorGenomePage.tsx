@@ -146,7 +146,7 @@ const FlavorGenomePage: React.FC = () => {
           marginBottom: 'var(--space-8)',
         }}
       >
-        <FlavorWheel scores={wheelScores} size={260} />
+        <FlavorWheel scores={wheelScores} size="lg" />
       </div>
 
       {/* Flavor personality */}
