@@ -392,4 +392,221 @@ router.post('/recalibrate', authMiddleware, async (req: AuthRequest, res: Respon
   }
 });
 
+// ---------------------------------------------------------------------------
+// In-memory caches (follow the pattern from routes/home.ts)
+// ---------------------------------------------------------------------------
+const evolutionInsightCache = new Map<string, { insight: string; cachedAt: number }>();
+const whyCache = new Map<string, { explanation: string }>();
+
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
+const round1 = (n: number): number => Math.round(n * 10) / 10;
+
+const FLAVOR_AXES: { axis: string; field: keyof Pick<
+  Awaited<ReturnType<typeof prisma.flavorGenome.findUniqueOrThrow>>,
+  | 'saltScore' | 'sweetScore' | 'bitterScore' | 'acidityScore' | 'heatScore'
+  | 'umamiScore' | 'fatRichnessScore' | 'smokeCharScore' | 'fermentationScore'
+  | 'mineralCleanScore' | 'aromaticIntensityScore'
+> }[] = [
+  { axis: 'Salt', field: 'saltScore' },
+  { axis: 'Sweetness', field: 'sweetScore' },
+  { axis: 'Bitterness', field: 'bitterScore' },
+  { axis: 'Acidity', field: 'acidityScore' },
+  { axis: 'Heat', field: 'heatScore' },
+  { axis: 'Umami', field: 'umamiScore' },
+  { axis: 'Richness', field: 'fatRichnessScore' },
+  { axis: 'Smoke', field: 'smokeCharScore' },
+  { axis: 'Ferment', field: 'fermentationScore' },
+  { axis: 'Mineral', field: 'mineralCleanScore' },
+  { axis: 'Aromatic', field: 'aromaticIntensityScore' },
+];
+
+async function getEvolutionInsight(userId: string): Promise<string> {
+  const cached = evolutionInsightCache.get(userId);
+  if (cached && Date.now() - cached.cachedAt < THREE_DAYS_MS) {
+    return cached.insight;
+  }
+
+  const [historyCount, favoritesCount] = await Promise.all([
+    prisma.recipeHistory.count({ where: { userId } }),
+    prisma.favorite.count({ where: { userId } }),
+  ]);
+
+  if (historyCount + favoritesCount < 5) {
+    return 'Your flavor evolution will appear here as you explore.';
+  }
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const recentHistory = await prisma.recipeHistory.findMany({
+    where: { userId, createdAt: { gte: thirtyDaysAgo } },
+    include: { recipe: { select: { title: true, mood: true, cuisineInspiration: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const payload = JSON.stringify({
+    recentRecipes: recentHistory.map((h) => ({
+      title: h.recipe.title,
+      mood: h.recipe.mood,
+      cuisine: h.recipe.cuisineInspiration,
+    })),
+    favoriteCount: favoritesCount,
+  });
+
+  const result = await callClaudeWithRetry<{ insight: string }>(
+    `You are Savora's flavor evolution narrator. Based on the user's recent food history, write ONE short sentence describing how their palate is evolving. Tone: intelligent, observational. Return JSON: { "insight": string }`,
+    payload
+  );
+
+  evolutionInsightCache.set(userId, { insight: result.insight, cachedAt: Date.now() });
+  return result.insight;
+}
+
+// GET /api/genome/flavor/analysis
+router.get('/flavor/analysis', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+
+  try {
+    const [flavorGenome, identity] = await Promise.all([
+      prisma.flavorGenome.findUnique({ where: { userId } }),
+      prisma.culinaryIdentityGenome.findUnique({ where: { userId } }),
+    ]);
+
+    if (!flavorGenome) {
+      res.status(404).json({ error: 'Flavor genome not found' });
+      return;
+    }
+
+    const fullSpectrum = FLAVOR_AXES.map(({ axis, field }) => ({
+      axis,
+      score: round1((flavorGenome[field] as number) / 10),
+    }));
+
+    const sortedDesc = [...fullSpectrum].sort((a, b) => b.score - a.score);
+    const dominantAffinities = sortedDesc.slice(0, 4);
+    const recessiveNotes = sortedDesc.slice(-3);
+
+    const adventurousness = identity?.adventurousness ?? 0;
+
+    const distinct = await prisma.generatedRecipe.findMany({
+      where: { userId },
+      select: { cuisineInspiration: true },
+      distinct: ['cuisineInspiration'],
+    });
+    const distinctCuisineCount = Math.min(distinct.length, 10);
+    const explorationIndex = Math.min(10, (adventurousness / 10) * 0.4 + distinctCuisineCount * 0.6);
+
+    const intensityPreference =
+      (flavorGenome.heatScore + flavorGenome.aromaticIntensityScore + flavorGenome.smokeCharScore) / 3 / 10;
+
+    let evolutionInsight = 'Your flavor evolution will appear here as you explore.';
+    try {
+      evolutionInsight = await getEvolutionInsight(userId);
+    } catch (err) {
+      console.error('Evolution insight error:', err);
+    }
+
+    res.json({
+      wheel: flavorGenome,
+      dominantAffinities,
+      recessiveNotes,
+      fullSpectrum,
+      dimensions: {
+        noveltyDrive: round1(adventurousness / 10),
+        intensityPreference: round1(intensityPreference),
+        richnessTendency: round1(flavorGenome.fatRichnessScore / 10),
+        explorationIndex: round1(explorationIndex),
+      },
+      evolutionInsight,
+      flavorPersonality: flavorGenome.flavorPersonality,
+    });
+  } catch (err) {
+    console.error('Flavor analysis error:', err);
+    res.status(500).json({ error: 'Failed to load flavor analysis' });
+  }
+});
+
+// GET /api/genome/identity/detail
+router.get('/identity/detail', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+
+  try {
+    const [identity, flavorGenome] = await Promise.all([
+      prisma.culinaryIdentityGenome.findUnique({ where: { userId } }),
+      prisma.flavorGenome.findUnique({ where: { userId } }),
+    ]);
+
+    if (!identity) {
+      res.status(404).json({ error: 'Culinary identity genome not found' });
+      return;
+    }
+
+    const keywords = (flavorGenome?.dominantFlavors ?? [])
+      .slice(0, 3)
+      .map((f) => f.toUpperCase());
+
+    const behaviorScores = [
+      { label: 'Adventurousness', score: round1(identity.adventurousness / 10) },
+      { label: 'Novelty Seeking', score: round1(identity.comfortVsNovelty / 10) },
+      { label: 'Complexity Tolerance', score: round1(identity.complexityTolerance / 10) },
+      { label: 'Luxury Affinity', score: round1(identity.luxuryVsRustic / 10) },
+      { label: 'Social Dining', score: round1(identity.socialVsSolitary / 10) },
+      { label: 'Ritual Tendency', score: round1(identity.ritualVsSpontaneity / 10) },
+    ];
+
+    const cuisineAffinity = identity.cuisineAffinity.slice(0, 6).map((cuisine, i) => ({
+      cuisine,
+      score: round1(Math.max(5.0, 9.2 - i * 0.9)),
+    }));
+
+    res.json({
+      identityTitle: identity.identityTitle,
+      identitySubtitle: identity.identitySubtitle,
+      keywords,
+      description: identity.identitySubtitle,
+      whySavoraAssignedThis: whyCache.get(userId)?.explanation ?? null,
+      behaviorScores,
+      cuisineAffinity,
+      atmospherePreferences: identity.diningAtmospherePreference,
+      evolutionNote: identity.evolutionNote,
+    });
+  } catch (err) {
+    console.error('Identity detail error:', err);
+    res.status(500).json({ error: 'Failed to load identity detail' });
+  }
+});
+
+// GET /api/genome/identity/why
+router.get('/identity/why', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+
+  const cached = whyCache.get(userId);
+  if (cached) {
+    res.json({ explanation: cached.explanation });
+    return;
+  }
+
+  try {
+    const [identity, flavorGenome] = await Promise.all([
+      prisma.culinaryIdentityGenome.findUnique({ where: { userId } }),
+      prisma.flavorGenome.findUnique({ where: { userId } }),
+    ]);
+
+    if (!identity) {
+      res.status(404).json({ error: 'Culinary identity genome not found' });
+      return;
+    }
+
+    const result = await callClaudeWithRetry<{ explanation: string }>(
+      `You are Savora's identity assignment narrator. In 2-3 sentences, explain in second person why the user was assigned their Culinary Identity. Be specific — reference their actual genome data. Tone: intelligent, direct, non-generic. No filler phrases. Return JSON: { "explanation": string }`,
+      JSON.stringify({ identityGenome: identity, flavorGenome })
+    );
+
+    whyCache.set(userId, { explanation: result.explanation });
+    res.json({ explanation: result.explanation });
+  } catch (err) {
+    console.error('Identity why error:', err);
+    res.status(500).json({ error: 'Failed to generate explanation' });
+  }
+});
+
 export default router;

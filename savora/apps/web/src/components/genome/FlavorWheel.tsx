@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 
 export interface FlavorScores {
@@ -17,198 +17,149 @@ export interface FlavorScores {
 }
 
 interface FlavorWheelProps {
-  scores: FlavorScores;
+  scores: Record<string, number> | FlavorScores;
   size?: 'sm' | 'lg';
 }
 
-const AXES: { key: keyof FlavorScores; label: string }[] = [
+// 11 dimensions, clockwise from top
+const SEGMENTS: { key: string; label: string }[] = [
+  { key: 'aromaticIntensityScore', label: 'Aromatic' },
   { key: 'saltScore', label: 'Salt' },
-  { key: 'sweetScore', label: 'Sweet' },
-  { key: 'bitterScore', label: 'Bitter' },
+  { key: 'sweetScore', label: 'Sweetness' },
+  { key: 'bitterScore', label: 'Bitterness' },
   { key: 'acidityScore', label: 'Acidity' },
   { key: 'heatScore', label: 'Heat' },
-  { key: 'aromaticSpiceScore', label: 'Aromatic' },
   { key: 'umamiScore', label: 'Umami' },
   { key: 'fatRichnessScore', label: 'Richness' },
   { key: 'smokeCharScore', label: 'Smoke' },
-  { key: 'fermentationScore', label: 'Fermentation' },
+  { key: 'fermentationScore', label: 'Ferment' },
   { key: 'mineralCleanScore', label: 'Mineral' },
-  { key: 'aromaticIntensityScore', label: 'Intensity' },
 ];
 
-const TOTAL_AXES = 12;
+const SEGMENT_COUNT = SEGMENTS.length;
+const SEGMENT_SWEEP = 360 / SEGMENT_COUNT;
+const GAP = 2;
 
-function polar(angle: number, r: number, cx: number, cy: number) {
-  const rad = ((angle - 90) * Math.PI) / 180;
+function polar(cx: number, cy: number, r: number, angleDeg: number) {
+  const rad = ((angleDeg - 90) * Math.PI) / 180;
   return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
 }
 
-export const FlavorWheel: React.FC<FlavorWheelProps> = ({ scores, size = 'lg' }) => {
-  const [tooltip, setTooltip] = useState<{ label: string; score: number; x: number; y: number } | null>(null);
+function wedgePath(
+  cx: number,
+  cy: number,
+  innerR: number,
+  outerR: number,
+  a1: number,
+  a2: number
+) {
+  const p1 = polar(cx, cy, outerR, a1);
+  const p2 = polar(cx, cy, outerR, a2);
+  const p3 = polar(cx, cy, innerR, a2);
+  const p4 = polar(cx, cy, innerR, a1);
+  const largeArc = a2 - a1 > 180 ? 1 : 0;
+  return `M ${p1.x} ${p1.y} A ${outerR} ${outerR} 0 ${largeArc} 1 ${p2.x} ${p2.y} L ${p3.x} ${p3.y} A ${innerR} ${innerR} 0 ${largeArc} 0 ${p4.x} ${p4.y} Z`;
+}
 
+export const FlavorWheel: React.FC<FlavorWheelProps> = ({ scores, size = 'lg' }) => {
   const isLg = size === 'lg';
   const viewBoxSize = isLg ? 400 : 200;
   const cx = viewBoxSize / 2;
   const cy = viewBoxSize / 2;
+  const innerRadius = isLg ? 48 : 24;
   const maxRadius = isLg ? 140 : 70;
-  const dotR = isLg ? 3 : 2;
-  const labelRadius = maxRadius + 18;
-
-  // Build polygon points
-  const points = AXES.map((axis, i) => {
-    const angle = (i * 360) / TOTAL_AXES;
-    const score = scores[axis.key] ?? 0;
-    const r = (score / 100) * maxRadius;
-    return polar(angle, r, cx, cy);
-  });
-
-  const polygonPoints = points.map((p) => `${p.x},${p.y}`).join(' ');
+  const labelRadius = maxRadius + 14;
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block', width: viewBoxSize, height: viewBoxSize }}>
-      <svg
-        viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
-        width={viewBoxSize}
-        height={viewBoxSize}
-        style={{ display: 'block', overflow: 'visible' }}
-      >
-        {/* Grid rings */}
-        {[25, 50, 75, 100].map((pct) => (
-          <circle
-            key={pct}
-            cx={cx}
-            cy={cy}
-            r={(pct / 100) * maxRadius}
-            fill="none"
-            stroke="rgba(255,255,255,0.08)"
-            strokeWidth={1}
-          />
-        ))}
+    <svg
+      viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
+      width={viewBoxSize}
+      height={viewBoxSize}
+      style={{ display: 'block', overflow: 'visible' }}
+    >
+      {/* Reference ring at max radius */}
+      <circle
+        cx={cx}
+        cy={cy}
+        r={maxRadius}
+        fill="none"
+        stroke="rgba(255,255,255,0.06)"
+        strokeWidth={1}
+      />
 
-        {/* Axis lines */}
-        {AXES.map((_, i) => {
-          const angle = (i * 360) / TOTAL_AXES;
-          const end = polar(angle, maxRadius, cx, cy);
-          return (
-            <line
-              key={i}
-              x1={cx}
-              y1={cy}
-              x2={end.x}
-              y2={end.y}
-              stroke="rgba(255,255,255,0.1)"
+      {SEGMENTS.map((segment, i) => {
+        const startAngle = i * SEGMENT_SWEEP + GAP / 2;
+        const endAngle = (i + 1) * SEGMENT_SWEEP - GAP / 2;
+        const raw = (scores as Record<string, number>)[segment.key] ?? 0;
+        const score = Math.max(0, Math.min(100, raw));
+        const outerR = innerRadius + (score / 100) * (maxRadius - innerRadius);
+
+        const bgPath = wedgePath(cx, cy, innerRadius, maxRadius, startAngle, endAngle);
+        const fgPath = wedgePath(cx, cy, innerRadius, outerR, startAngle, endAngle);
+
+        const midAngle = (startAngle + endAngle) / 2;
+        const labelPos = polar(cx, cy, labelRadius, midAngle);
+        const textAnchor =
+          Math.abs(labelPos.x - cx) < 8 ? 'middle' : labelPos.x < cx ? 'end' : 'start';
+
+        return (
+          <g key={segment.key}>
+            {/* Background arc at full radius */}
+            <path
+              d={bgPath}
+              fill="rgba(255,255,255,0.04)"
+              stroke="rgba(255,255,255,0.08)"
               strokeWidth={1}
             />
-          );
-        })}
 
-        {/* Score polygon with Framer Motion fade-in */}
-        <motion.polygon
-          points={polygonPoints}
-          fill="rgba(201, 169, 110, 0.15)"
-          stroke="#c9a96e"
-          strokeWidth={2}
-          strokeLinejoin="round"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6 }}
-        />
-
-        {/* Score dots */}
-        {points.map((p, i) => {
-          const axis = AXES[i];
-          const score = scores[axis.key] ?? 0;
-          return (
-            <circle
-              key={axis.key}
-              cx={p.x}
-              cy={p.y}
-              r={dotR}
-              fill="#c9a96e"
-              style={isLg ? { cursor: 'pointer' } : undefined}
-              onMouseEnter={isLg ? (e) => {
-                const svgEl = (e.target as SVGElement).closest('svg');
-                const rect = svgEl?.getBoundingClientRect();
-                if (!rect) return;
-                setTooltip({
-                  label: axis.label,
-                  score,
-                  x: p.x,
-                  y: p.y,
-                });
-              } : undefined}
-              onMouseLeave={isLg ? () => setTooltip(null) : undefined}
-              onTouchStart={isLg ? () => {
-                setTooltip({ label: axis.label, score, x: p.x, y: p.y });
-                setTimeout(() => setTooltip(null), 1500);
-              } : undefined}
-            />
-          );
-        })}
-
-        {/* Axis labels (lg only) */}
-        {isLg && AXES.map((axis, i) => {
-          const angle = (i * 360) / TOTAL_AXES;
-          const pos = polar(angle, labelRadius, cx, cy);
-          const textAnchor =
-            Math.abs(pos.x - cx) < 8 ? 'middle' : pos.x < cx ? 'end' : 'start';
-          return (
-            <text
-              key={axis.key}
-              x={pos.x}
-              y={pos.y}
-              textAnchor={textAnchor}
-              dominantBaseline="middle"
-              fontSize="10"
-              fontFamily="'DM Mono', monospace"
-              fill="#b8b0a0"
-              style={{ cursor: 'pointer', userSelect: 'none' }}
-              onMouseEnter={() => {
-                const score = scores[axis.key] ?? 0;
-                setTooltip({ label: axis.label, score, x: pos.x, y: pos.y });
-              }}
-              onMouseLeave={() => setTooltip(null)}
-            >
-              {axis.label}
-            </text>
-          );
-        })}
-
-        {/* Tooltip (lg only) */}
-        {isLg && tooltip && (() => {
-          const tooltipW = 100;
-          const tooltipH = 28;
-          // Clamp so tooltip stays inside viewBox
-          const tx = Math.min(Math.max(tooltip.x - tooltipW / 2, 4), viewBoxSize - tooltipW - 4);
-          const ty = tooltip.y - tooltipH - 8 < 0 ? tooltip.y + 8 : tooltip.y - tooltipH - 8;
-          return (
-            <g style={{ pointerEvents: 'none' }}>
-              <rect
-                x={tx}
-                y={ty}
-                width={tooltipW}
-                height={tooltipH}
-                rx={4}
-                fill="#1e1e1e"
-                stroke="#c9a96e"
-                strokeWidth={1}
+            {/* Score arc wedge */}
+            {isLg ? (
+              <motion.path
+                d={fgPath}
+                fill="rgba(160, 120, 64, 0.85)"
+                stroke="var(--color-accent-primary)"
+                strokeWidth={1.5}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3, delay: i * 0.04 }}
+                style={{ transformOrigin: `${cx}px ${cy}px` }}
               />
+            ) : (
+              <path
+                d={fgPath}
+                fill="rgba(160, 120, 64, 0.85)"
+                stroke="var(--color-accent-primary)"
+                strokeWidth={1.5}
+              />
+            )}
+
+            {/* Label (lg only) */}
+            {isLg && (
               <text
-                x={tx + tooltipW / 2}
-                y={ty + tooltipH / 2}
-                textAnchor="middle"
+                x={labelPos.x}
+                y={labelPos.y}
+                textAnchor={textAnchor}
                 dominantBaseline="middle"
                 fontSize="10"
-                fontFamily="'DM Mono', monospace"
-                fill="#f5f0e8"
+                fontFamily="var(--font-label)"
+                fill={
+                  score >= 75
+                    ? 'var(--color-accent-primary)'
+                    : 'var(--color-text-secondary)'
+                }
+                style={{ userSelect: 'none' }}
               >
-                {tooltip.label} · {tooltip.score}
+                {segment.label}
               </text>
-            </g>
-          );
-        })()}
-      </svg>
-    </div>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Centre */}
+      <circle cx={cx} cy={cy} r={6} fill="#1a1208" />
+      <circle cx={cx} cy={cy} r={2} fill="var(--color-accent-primary)" />
+    </svg>
   );
 };
 
