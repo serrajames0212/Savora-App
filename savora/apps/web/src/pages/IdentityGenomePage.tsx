@@ -1,520 +1,502 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { useGenomeStore } from '../stores/useGenomeStore';
-import { useEvolution, useIdentityWhy, type EvolutionData, type GatedEvolutionResponse } from '../hooks/useEvolution';
-import { Card } from '../components/ui/Card';
-import { Badge } from '../components/ui/Badge';
-import { Button } from '../components/ui/Button';
-import PaywallSheet from '../components/subscription/PaywallSheet';
+import { useQuery } from '@tanstack/react-query';
+import api from '../lib/api';
+import PageShell from '../components/layout/PageShell';
 
-const BEHAVIOR_AXES: { key: keyof NonNullable<ReturnType<typeof useGenomeStore.getState>['culinaryIdentity']>['behaviorScores']; label: string; dual?: [string, string] }[] = [
-  { key: 'adventurousness', label: 'Adventurousness' },
-  { key: 'comfortVsNovelty', label: 'Comfort ←→ Novelty', dual: ['Comfort', 'Novelty'] },
-  { key: 'luxuryVsRustic', label: 'Luxury ←→ Rustic', dual: ['Luxury', 'Rustic'] },
-  { key: 'complexityTolerance', label: 'Complexity Tolerance' },
-  { key: 'socialVsSolitary', label: 'Social ←→ Solitary', dual: ['Social', 'Solitary'] },
-  { key: 'ritualVsSpontaneity', label: 'Ritual ←→ Spontaneity', dual: ['Ritual', 'Spontaneity'] },
-  { key: 'finingDiningAffinity', label: 'Fine Dining Affinity' },
-];
+interface BehaviorScore {
+  label: string;
+  score: number;
+}
 
-function ScoreBar({ score, delay }: { score: number; delay: number }) {
+interface IdentityDetail {
+  identityTitle: string;
+  keywords: string[];
+  description: string;
+  whySavoraAssignedThis: string;
+  behaviorScores: BehaviorScore[];
+  cuisineAffinity: { cuisine: string; score: number }[];
+  atmospherePreferences: string[];
+  evolutionNote: string;
+}
+
+const sectionHeaderStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-label)',
+  fontSize: '10px',
+  letterSpacing: '0.15em',
+  textTransform: 'uppercase',
+  color: 'var(--color-accent-muted)',
+  margin: '0 0 var(--space-4)',
+};
+
+const BrainIcon: React.FC = () => (
+  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(201,169,110,0.7)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-1.07-3.22 3 3 0 0 1 .79-5.19 2.5 2.5 0 0 1 2.74-4.12z" />
+    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 1.07-3.22 3 3 0 0 0-.79-5.19 2.5 2.5 0 0 0-2.74-4.12z" />
+  </svg>
+);
+
+function BarRow({ label, score, index }: { label: string; score: number; index: number }) {
   return (
-    <div
-      style={{
-        height: '4px',
-        borderRadius: '2px',
-        backgroundColor: 'var(--color-bg-elevated)',
-        overflow: 'hidden',
-        marginTop: 'var(--space-1)',
-      }}
-    >
-      <motion.div
+    <div style={{ marginBottom: 'var(--space-4)' }}>
+      <div
         style={{
-          height: '100%',
-          borderRadius: '2px',
-          backgroundColor: 'var(--color-accent-primary)',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'baseline',
+          marginBottom: 'var(--space-1)',
         }}
-        initial={{ width: 0 }}
-        animate={{ width: `${score}%` }}
-        transition={{ duration: 0.7, delay, ease: 'easeOut' }}
-      />
+      >
+        <span
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            color: 'var(--color-text-secondary)',
+          }}
+        >
+          {label}
+        </span>
+        <span
+          style={{
+            fontFamily: 'var(--font-label)',
+            fontSize: '12px',
+            color: 'var(--color-accent-primary)',
+          }}
+        >
+          {score.toFixed(1)}
+        </span>
+      </div>
+      <div
+        style={{
+          height: '3px',
+          borderRadius: '2px',
+          backgroundColor: 'rgba(255,255,255,0.06)',
+          overflow: 'hidden',
+        }}
+      >
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${(score / 10) * 100}%` }}
+          transition={{ duration: 0.5, delay: index * 0.06, ease: 'easeOut' }}
+          style={{
+            height: '100%',
+            borderRadius: '2px',
+            backgroundColor:
+              score >= 7.5
+                ? 'rgba(201,169,110,1)'
+                : score >= 5
+                ? 'rgba(201,169,110,0.65)'
+                : 'rgba(255,255,255,0.2)',
+          }}
+        />
+      </div>
     </div>
   );
 }
 
-function SignificanceBadge({ significance }: { significance: 'minor' | 'moderate' | 'major' }) {
-  const variantMap: Record<string, 'muted' | 'default' | 'accent'> = {
-    minor: 'muted',
-    moderate: 'default',
-    major: 'accent',
-  };
-  return <Badge variant={variantMap[significance]}>{significance}</Badge>;
-}
-
 const IdentityGenomePage: React.FC = () => {
   const navigate = useNavigate();
-  const culinaryIdentity = useGenomeStore((s) => s.culinaryIdentity);
-  const { data: evolutionData, isLoading: evolutionLoading } = useEvolution();
-  const { data: whyData, isLoading: whyLoading } = useIdentityWhy();
-  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [whyExpanded, setWhyExpanded] = useState(false);
 
-  if (!culinaryIdentity) {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: '100vh',
-          color: 'var(--color-text-muted)',
-          fontFamily: 'var(--font-body)',
-        }}
-      >
-        No identity genome found. Complete onboarding first.
-      </div>
-    );
-  }
-
-  const isGated =
-    evolutionData && 'gated' in evolutionData && (evolutionData as GatedEvolutionResponse).gated;
-  const evolution =
-    evolutionData && !('gated' in evolutionData) ? (evolutionData as EvolutionData) : null;
+  const { data, isLoading, isError, refetch } = useQuery<IdentityDetail>({
+    queryKey: ['genome', 'identity', 'detail'],
+    queryFn: async () => {
+      const res = await api.get<IdentityDetail>('/genome/identity/detail');
+      return res.data;
+    },
+  });
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: 'var(--color-bg-base)',
-        padding: 'var(--space-6)',
-        maxWidth: '390px',
-        margin: '0 auto',
-      }}
-    >
-      {/* Back button */}
-      <button
-        onClick={() => navigate('/profile')}
-        style={{
-          background: 'none',
-          border: 'none',
-          color: 'var(--color-text-secondary)',
-          fontFamily: 'var(--font-body)',
-          fontSize: '14px',
-          cursor: 'pointer',
-          padding: '0 0 var(--space-6) 0',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-1)',
-        }}
-      >
-        ← Profile
-      </button>
-
-      {/* Title */}
-      <h1
-        style={{
-          fontFamily: 'var(--font-display)',
-          fontSize: '2rem',
-          color: 'var(--color-text-primary)',
-          margin: '0 0 var(--space-2)',
-          lineHeight: 1.2,
-        }}
-      >
-        {culinaryIdentity.identityTitle}
-      </h1>
-
-      {/* Subtitle */}
-      <p
-        style={{
-          fontFamily: 'var(--font-body)',
-          fontSize: '14px',
-          color: 'var(--color-text-secondary)',
-          margin: '0 0 var(--space-4)',
-          lineHeight: 1.6,
-        }}
-      >
-        {culinaryIdentity.identitySubtitle}
-      </p>
-
-      {/* Evolution note */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-2)',
-          marginBottom: 'var(--space-8)',
-        }}
-      >
-        <motion.div
+    <PageShell>
+      <div style={{ maxWidth: '640px', margin: '0 auto', padding: 'var(--space-6)' }}>
+        {/* Back */}
+        <button
+          onClick={() => navigate('/profile')}
           style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--color-accent-primary)',
-            flexShrink: 0,
-          }}
-          animate={{ opacity: [1, 0.3, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <p
-          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--color-text-secondary)',
             fontFamily: 'var(--font-body)',
-            fontSize: '13px',
-            color: 'var(--color-text-muted)',
-            fontStyle: 'italic',
-            margin: 0,
+            fontSize: '14px',
+            cursor: 'pointer',
+            padding: '0 0 var(--space-6) 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 'var(--space-1)',
           }}
         >
-          {culinaryIdentity.evolutionNote}
-        </p>
-      </div>
+          ← Profile
+        </button>
 
-      {/* Behavior Profile */}
-      <section style={{ marginBottom: 'var(--space-8)' }}>
-        <h2
-          style={{
-            fontFamily: 'var(--font-label)',
-            fontSize: '11px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-muted)',
-            margin: '0 0 var(--space-5)',
-          }}
-        >
-          Behavior Profile
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
-          {BEHAVIOR_AXES.map((axis, i) => {
-            const score = culinaryIdentity.behaviorScores[axis.key];
-            return (
-              <div key={axis.key}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-body)',
-                      fontSize: '13px',
-                      color: 'var(--color-text-secondary)',
-                    }}
-                  >
-                    {axis.label}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: 'var(--font-label)',
-                      fontSize: '12px',
-                      color: 'var(--color-accent-primary)',
-                    }}
-                  >
-                    {Math.round(score)}
-                  </span>
-                </div>
-                <ScoreBar score={score} delay={i * 0.05} />
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Cuisine Affinity */}
-      <section style={{ marginBottom: 'var(--space-8)' }}>
-        <h2
-          style={{
-            fontFamily: 'var(--font-label)',
-            fontSize: '11px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-muted)',
-            margin: '0 0 var(--space-5)',
-          }}
-        >
-          Cuisine Affinity
-        </h2>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-          {culinaryIdentity.cuisineAffinity.map((cuisine, i) => (
-            <div
-              key={cuisine}
-              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}
-            >
-              <span
-                style={{
-                  fontFamily: 'var(--font-label)',
-                  fontSize: '11px',
-                  color: 'var(--color-accent-primary)',
-                  width: '20px',
-                  flexShrink: 0,
-                  textAlign: 'center',
-                }}
-              >
-                {i + 1}
-              </span>
-              <span
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '14px',
-                  color: i < 3 ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
-                }}
-              >
-                {cuisine}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Atmosphere */}
-      <section style={{ marginBottom: 'var(--space-8)' }}>
-        <h2
-          style={{
-            fontFamily: 'var(--font-label)',
-            fontSize: '11px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-muted)',
-            margin: '0 0 var(--space-4)',
-          }}
-        >
-          Atmosphere
-        </h2>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-          {culinaryIdentity.diningAtmospherePreference.map((atm) => (
-            <Badge key={atm} variant="default">
-              {atm}
-            </Badge>
-          ))}
-        </div>
-      </section>
-
-      {/* Why you are [identityTitle] */}
-      <section style={{ marginBottom: 'var(--space-8)' }}>
-        <h2
-          style={{
-            fontFamily: 'var(--font-label)',
-            fontSize: '11px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-muted)',
-            margin: '0 0 var(--space-4)',
-          }}
-        >
-          Why you are {culinaryIdentity.identityTitle}
-        </h2>
-        {whyLoading ? (
+        {isLoading && (
           <div
             style={{
-              height: '60px',
-              backgroundColor: 'var(--color-bg-surface)',
-              borderRadius: 'var(--radius-md)',
-              opacity: 0.5,
-            }}
-          />
-        ) : whyData?.explanation ? (
-          <div
-            style={{
-              borderLeft: '2px solid var(--color-accent-border)',
-              paddingLeft: 'var(--space-4)',
-              paddingTop: 'var(--space-3)',
-              paddingBottom: 'var(--space-3)',
-              backgroundColor: 'var(--color-bg-elevated)',
-              borderRadius: '0 var(--radius-md) var(--radius-md) 0',
+              padding: 'var(--space-8) 0',
+              textAlign: 'center',
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              color: 'var(--color-text-muted)',
             }}
           >
+            Loading identity analysis…
+          </div>
+        )}
+
+        {isError && (
+          <div style={{ padding: 'var(--space-8) 0', textAlign: 'center' }}>
             <p
               style={{
                 fontFamily: 'var(--font-body)',
                 fontSize: '14px',
-                color: 'var(--color-text-secondary)',
-                fontStyle: 'italic',
-                margin: 0,
-                lineHeight: 1.65,
-              }}
-            >
-              {whyData.explanation}
-            </p>
-          </div>
-        ) : null}
-      </section>
-
-      {/* Evolution (Reserve only) */}
-      <section style={{ marginBottom: 'var(--space-8)' }}>
-        <h2
-          style={{
-            fontFamily: 'var(--font-label)',
-            fontSize: '11px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-text-muted)',
-            margin: '0 0 var(--space-4)',
-          }}
-        >
-          Your Evolution
-        </h2>
-
-        {evolutionLoading ? (
-          <div
-            style={{
-              height: '80px',
-              backgroundColor: 'var(--color-bg-surface)',
-              borderRadius: 'var(--radius-md)',
-              opacity: 0.5,
-            }}
-          />
-        ) : isGated ? (
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            onClick={() => setPaywallOpen(true)}
-            style={{
-              backgroundColor: 'var(--color-bg-elevated)',
-              border: '1px solid var(--color-border-subtle)',
-              borderLeft: '3px solid var(--color-accent-primary)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-5)',
-              cursor: 'pointer',
-            }}
-          >
-            <p
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontSize: '15px',
-                color: 'var(--color-text-primary)',
-                margin: 0,
-                marginBottom: 'var(--space-2)',
-                lineHeight: 1.3,
-              }}
-            >
-              Your taste is always changing.
-            </p>
-            <p
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontSize: '13px',
                 color: 'var(--color-text-muted)',
-                margin: 0,
-                marginBottom: 'var(--space-3)',
-                lineHeight: 1.55,
+                marginBottom: 'var(--space-4)',
               }}
             >
-              See how your palate has shifted over time — which flavours you've grown into, and which you've left behind.
+              Could not load your identity analysis.
             </p>
-            <span
+            <button
+              onClick={() => refetch()}
               style={{
+                background: 'none',
+                border: '1px solid var(--color-border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: 'var(--space-2) var(--space-4)',
+                color: 'var(--color-text-secondary)',
                 fontFamily: 'var(--font-label)',
                 fontSize: '12px',
-                color: 'var(--color-accent-primary)',
-                letterSpacing: '0.04em',
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                cursor: 'pointer',
               }}
             >
-              See how your taste has changed · Reserve
-            </span>
-          </motion.div>
-        ) : evolution ? (
+              Retry
+            </button>
+          </div>
+        )}
+
+        {data && (
           <>
-            {!evolution.hasEnoughData && evolution.dataNote && (
-              <p
+            {/* Section 1: Identity Card */}
+            <section
+              style={{
+                backgroundColor: 'var(--color-bg-surface)',
+                border: '1px solid rgba(201,169,110,0.25)',
+                borderRadius: 'var(--radius-lg)',
+                padding: 'var(--space-7)',
+                marginBottom: 'var(--space-8)',
+              }}
+            >
+              <div
                 style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '13px',
-                  color: 'var(--color-text-muted)',
-                  fontStyle: 'italic',
-                  marginBottom: 'var(--space-4)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 'var(--space-3)',
+                  marginBottom: 'var(--space-5)',
                 }}
               >
-                {evolution.dataNote}
-              </p>
-            )}
+                <BrainIcon />
+                <span
+                  style={{
+                    fontFamily: 'var(--font-label)',
+                    fontSize: '10px',
+                    letterSpacing: '0.2em',
+                    textTransform: 'uppercase',
+                    color: 'rgba(201,169,110,0.6)',
+                  }}
+                >
+                  Taste Identity
+                </span>
+              </div>
 
-            {evolution.identityShifts.length > 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', marginBottom: 'var(--space-5)' }}>
-                {evolution.identityShifts.map((shift, i) => (
-                  <div
-                    key={i}
+              <h1
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '2rem',
+                  color: 'var(--color-text-primary)',
+                  margin: '0 0 var(--space-4)',
+                  lineHeight: 1.15,
+                }}
+              >
+                {data.identityTitle}
+              </h1>
+
+              {/* Keywords */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 'var(--space-2)',
+                  marginBottom: 'var(--space-5)',
+                }}
+              >
+                {data.keywords.map((kw) => (
+                  <span
+                    key={kw}
                     style={{
-                      backgroundColor: 'var(--color-bg-surface)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: 'var(--space-4)',
-                      borderLeft: '2px solid var(--color-border-subtle)',
+                      fontFamily: 'var(--font-label)',
+                      fontSize: '10px',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-accent-primary)',
+                      border: '1px solid rgba(201,169,110,0.35)',
+                      borderRadius: '999px',
+                      padding: '3px 10px',
                     }}
                   >
+                    {kw}
+                  </span>
+                ))}
+              </div>
+
+              {/* Description blockquote */}
+              <blockquote
+                style={{
+                  borderLeft: '3px solid rgba(201,169,110,0.4)',
+                  paddingLeft: 'var(--space-4)',
+                  margin: '0 0 var(--space-6)',
+                }}
+              >
+                <p
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '15px',
+                    fontStyle: 'italic',
+                    color: 'var(--color-text-secondary)',
+                    lineHeight: 1.6,
+                    margin: 0,
+                  }}
+                >
+                  {data.description}
+                </p>
+              </blockquote>
+
+              {/* WHY nested card */}
+              <div
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.03)',
+                  border: '1px solid var(--color-border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  overflow: 'hidden',
+                }}
+              >
+                <button
+                  onClick={() => setWhyExpanded((v) => !v)}
+                  style={{
+                    width: '100%',
+                    background: 'none',
+                    border: 'none',
+                    padding: 'var(--space-4) var(--space-5)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-label)',
+                      fontSize: '10px',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-accent-muted)',
+                    }}
+                  >
+                    Why Savora assigned this
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-label)',
+                      fontSize: '14px',
+                      color: 'var(--color-text-muted)',
+                      transition: 'transform 0.2s',
+                      display: 'inline-block',
+                      transform: whyExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                    }}
+                  >
+                    ↓
+                  </span>
+                </button>
+                {whyExpanded && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.25 }}
+                    style={{ padding: 'var(--space-2) var(--space-5) var(--space-5)' }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '14px',
+                        color: 'var(--color-text-secondary)',
+                        lineHeight: 1.65,
+                        margin: 0,
+                      }}
+                    >
+                      {data.whySavoraAssignedThis}
+                    </p>
+                  </motion.div>
+                )}
+              </div>
+            </section>
+
+            {/* Section 2: Behavioral Profile */}
+            <section style={{ marginBottom: 'var(--space-8)' }}>
+              <h2 style={sectionHeaderStyle}>Behavioral Profile</h2>
+              {data.behaviorScores.map((row, i) => (
+                <BarRow key={row.label} label={row.label} score={row.score} index={i} />
+              ))}
+            </section>
+
+            {/* Section 3: Cuisine Affinity */}
+            <section style={{ marginBottom: 'var(--space-8)' }}>
+              <h2 style={sectionHeaderStyle}>Cuisine Affinity</h2>
+              {data.cuisineAffinity.map((item, i) => (
+                <div
+                  key={item.cuisine}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 'var(--space-3)',
+                    marginBottom: 'var(--space-3)',
+                  }}
+                >
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-label)',
+                      fontSize: '10px',
+                      color: 'var(--color-accent-primary)',
+                      width: '18px',
+                      flexShrink: 0,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {i + 1}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <div
                       style={{
                         display: 'flex',
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: 'var(--space-2)',
+                        alignItems: 'baseline',
+                        marginBottom: '4px',
                       }}
                     >
+                      <span
+                        style={{
+                          fontFamily: 'var(--font-body)',
+                          fontSize: '14px',
+                          color: i < 3 ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                        }}
+                      >
+                        {item.cuisine}
+                      </span>
                       <span
                         style={{
                           fontFamily: 'var(--font-label)',
                           fontSize: '11px',
                           color: 'var(--color-text-muted)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.06em',
                         }}
                       >
-                        {shift.period}
+                        {item.score.toFixed(1)}
                       </span>
-                      <SignificanceBadge significance={shift.significance} />
                     </div>
-                    <p
+                    <div
                       style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '13px',
-                        color: 'var(--color-text-secondary)',
-                        margin: 0,
-                        lineHeight: 1.5,
+                        height: '2px',
+                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        borderRadius: '1px',
+                        overflow: 'hidden',
                       }}
                     >
-                      {shift.what}
-                    </p>
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${(item.score / 10) * 100}%` }}
+                        transition={{ duration: 0.4, delay: i * 0.05, ease: 'easeOut' }}
+                        style={{
+                          height: '100%',
+                          backgroundColor: i < 3 ? 'rgba(201,169,110,0.8)' : 'rgba(255,255,255,0.15)',
+                          borderRadius: '1px',
+                        }}
+                      />
+                    </div>
                   </div>
+                </div>
+              ))}
+            </section>
+
+            {/* Section 4: Atmosphere Preferences */}
+            <section style={{ marginBottom: 'var(--space-8)' }}>
+              <h2 style={sectionHeaderStyle}>Atmosphere Preferences</h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                {data.atmospherePreferences.map((atm) => (
+                  <span
+                    key={atm}
+                    style={{
+                      fontFamily: 'var(--font-label)',
+                      fontSize: '11px',
+                      letterSpacing: '0.08em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-text-secondary)',
+                      border: '1px solid var(--color-border-subtle)',
+                      borderRadius: '999px',
+                      padding: '5px 12px',
+                    }}
+                  >
+                    {atm}
+                  </span>
                 ))}
               </div>
-            )}
+            </section>
 
-            {evolution.overallNarrative && (
-              <Card variant="elevated">
-                <p
+            {/* Section 5: Identity Evolution */}
+            {data.evolutionNote && (
+              <section style={{ marginBottom: 'var(--space-8)' }}>
+                <h2 style={sectionHeaderStyle}>Identity Evolution</h2>
+                <div
                   style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '14px',
-                    color: 'var(--color-text-secondary)',
-                    fontStyle: 'italic',
-                    margin: 0,
-                    lineHeight: 1.65,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: 'var(--space-3)',
+                    backgroundColor: 'var(--color-bg-surface)',
+                    border: '1px solid var(--color-border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: 'var(--space-5)',
                   }}
                 >
-                  {evolution.overallNarrative}
-                </p>
-              </Card>
-            )}
-
-            {evolution.currentMomentum && (
-              <p
-                style={{
-                  fontFamily: 'var(--font-body)',
-                  fontSize: '13px',
-                  color: 'var(--color-text-muted)',
-                  marginTop: 'var(--space-4)',
-                  lineHeight: 1.5,
-                }}
-              >
-                {evolution.currentMomentum}
-              </p>
+                  <motion.div
+                    animate={{ opacity: [1, 0.3, 1] }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: 'var(--color-accent-primary)',
+                      flexShrink: 0,
+                      marginTop: '6px',
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '14px',
+                      fontStyle: 'italic',
+                      color: 'var(--color-text-secondary)',
+                      lineHeight: 1.6,
+                      margin: 0,
+                    }}
+                  >
+                    {data.evolutionNote}
+                  </p>
+                </div>
+              </section>
             )}
           </>
-        ) : null}
-      </section>
-
-      <PaywallSheet isOpen={paywallOpen} onClose={() => setPaywallOpen(false)} />
-    </div>
+        )}
+      </div>
+    </PageShell>
   );
 };
 

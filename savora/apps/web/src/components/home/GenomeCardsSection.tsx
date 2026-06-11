@@ -140,74 +140,86 @@ const GenomeCardsSection: React.FC = () => {
       >
         {/* Culinary Identity Card */}
         {culinaryIdentity ? (
-          <div style={cardBase} onClick={() => navigate('/genome/identity')}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 'var(--space-3)' }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: '1.5rem',
-                    color: 'var(--color-text-primary)',
-                    marginBottom: 'var(--space-2)',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {culinaryIdentity.identityTitle}
-                </div>
-                <div
-                  style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.875rem',
-                    color: 'var(--color-text-muted)',
-                    marginBottom: 'var(--space-4)',
-                    lineHeight: 1.5,
-                  }}
-                >
-                  {culinaryIdentity.identitySubtitle}
-                </div>
-                {culinaryIdentity.evolutionNote && (
-                  <div
+          <div
+            style={{ ...cardBase, border: '1px solid rgba(201,169,110,0.25)' }}
+            onClick={() => navigate('/genome/identity')}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-label)',
+                fontSize: '9px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: 'rgba(201,169,110,0.55)',
+                marginBottom: 'var(--space-2)',
+              }}
+            >
+              Taste Identity
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '1.35rem',
+                color: 'var(--color-text-primary)',
+                marginBottom: 'var(--space-3)',
+                lineHeight: 1.2,
+              }}
+            >
+              {culinaryIdentity.identityTitle}
+            </div>
+            {/* Keyword chips from cuisine affinity */}
+            {culinaryIdentity.cuisineAffinity && culinaryIdentity.cuisineAffinity.length > 0 && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 'var(--space-1)',
+                  marginBottom: 'var(--space-4)',
+                }}
+              >
+                {culinaryIdentity.cuisineAffinity.slice(0, 3).map((kw: string) => (
+                  <span
+                    key={kw}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-2)',
-                      marginBottom: 'var(--space-4)',
+                      fontFamily: 'var(--font-label)',
+                      fontSize: '9px',
+                      letterSpacing: '0.1em',
+                      textTransform: 'uppercase',
+                      color: 'var(--color-accent-primary)',
+                      border: '1px solid rgba(201,169,110,0.3)',
+                      borderRadius: '999px',
+                      padding: '2px 8px',
                     }}
                   >
-                    <motion.div
-                      animate={{ opacity: [0.3, 1, 0.3] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                      style={{
-                        width: '6px',
-                        height: '6px',
-                        borderRadius: '50%',
-                        backgroundColor: 'var(--color-accent-primary)',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <div
-                      style={{
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '0.8rem',
-                        color: 'var(--color-text-muted)',
-                        fontStyle: 'italic',
-                      }}
-                    >
-                      {culinaryIdentity.evolutionNote}
-                    </div>
-                  </div>
-                )}
-                <div
-                  style={{
-                    fontFamily: 'var(--font-label)',
-                    fontSize: '12px',
-                    color: 'var(--color-accent-primary)',
-                    letterSpacing: '0.04em',
-                  }}
-                >
-                  View full identity →
-                </div>
+                    {kw}
+                  </span>
+                ))}
               </div>
+            )}
+            <div
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                color: 'var(--color-text-muted)',
+                lineHeight: 1.5,
+                marginBottom: 'var(--space-4)',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              } as React.CSSProperties}
+            >
+              {culinaryIdentity.identitySubtitle}
+            </div>
+            <div
+              style={{
+                fontFamily: 'var(--font-label)',
+                fontSize: '11px',
+                color: 'var(--color-accent-primary)',
+                letterSpacing: '0.04em',
+              }}
+            >
+              View full identity →
             </div>
           </div>
         ) : (
@@ -224,38 +236,68 @@ const GenomeCardsSection: React.FC = () => {
 
         {/* Flavor Genome Card */}
         {flavorGenome ? (
-          <div style={cardBase} onClick={() => navigate('/genome/flavor')}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <div
+            style={{ ...cardBase, border: '1px solid rgba(201,169,110,0.2)' }}
+            onClick={() => navigate('/genome/flavor')}
+          >
+            <div
+              style={{
+                fontFamily: 'var(--font-label)',
+                fontSize: '9px',
+                letterSpacing: '0.2em',
+                textTransform: 'uppercase',
+                color: 'rgba(201,169,110,0.55)',
+                marginBottom: 'var(--space-3)',
+              }}
+            >
+              Flavor Genome
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-5)' }}>
               <FlavorWheel scores={flavorGenome} size="sm" />
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 'var(--space-2)',
-                  justifyContent: 'center',
-                  marginTop: 'var(--space-4)',
-                }}
-              >
-                {(flavorGenome.dominantFlavors ?? []).slice(0, 4).map((flavor) => (
-                  <Badge key={flavor} variant="accent">
-                    {flavor}
-                  </Badge>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {(flavorGenome.dominantFlavors ?? []).slice(0, 3).map((flavor, i) => (
+                  <div
+                    key={flavor}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-2)',
+                      marginBottom: 'var(--space-2)',
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: '4px',
+                        height: '4px',
+                        borderRadius: '50%',
+                        backgroundColor:
+                          i === 0 ? 'rgba(201,169,110,1)' : 'rgba(201,169,110,0.5)',
+                        flexShrink: 0,
+                      }}
+                    />
+                    <span
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '13px',
+                        color: i === 0 ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {flavor}
+                    </span>
+                  </div>
                 ))}
-              </div>
-              {flavorGenome.flavorPersonality && (
                 <div
                   style={{
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '0.8rem',
-                    color: 'var(--color-text-muted)',
-                    textAlign: 'center',
+                    fontFamily: 'var(--font-label)',
+                    fontSize: '11px',
+                    color: 'var(--color-accent-primary)',
+                    letterSpacing: '0.04em',
                     marginTop: 'var(--space-3)',
-                    fontStyle: 'italic',
                   }}
                 >
-                  {flavorGenome.flavorPersonality}
+                  View full genome →
                 </div>
-              )}
+              </div>
             </div>
           </div>
         ) : (
