@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageShell from '../components/layout/PageShell';
@@ -22,8 +22,11 @@ interface Review {
 
 export default function CommunityReviewsPage() {
   const navigate = useNavigate();
+  const { city: cityParam } = useParams<{ city?: string }>();
   const queryClient = useQueryClient();
-  const [cityFilter, setCityFilter] = useState('');
+  const [cityFilter, setCityFilter] = useState(
+    cityParam ? cityParam.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()) : ''
+  );
   const [showCompose, setShowCompose] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
   const [form, setForm] = useState({ restaurantName: '', restaurantCity: '', body: '', visitedAt: '' });

@@ -248,6 +248,45 @@ const GeneratePage: React.FC = () => {
           >
             <DiscoverCard onClick={() => navigate('/generate/discover')} />
           </motion.div>
+
+          {/* Fridge AI shortcut */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35, delay: (MOODS.length + 1) * 0.07, ease: [0.16, 1, 0.3, 1] }}
+            style={{ gridColumn: '1 / -1' }}
+          >
+            <motion.div
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/fridge')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 'var(--space-4)',
+                padding: 'var(--space-4) var(--space-5)',
+                backgroundColor: 'var(--color-bg-surface)',
+                border: '1px solid var(--color-border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+              }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-primary)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="5" y="2" width="14" height="20" rx="2" />
+                <line x1="5" y1="9" x2="19" y2="9" />
+                <line x1="12" y1="13" x2="12" y2="18" />
+                <line x1="9.5" y1="15.5" x2="14.5" y2="15.5" />
+              </svg>
+              <div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--color-text-primary)' }}>
+                  Cook from your kitchen
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--color-text-muted)', marginTop: 2 }}>
+                  Tell us what you have. We'll create something worthy of it.
+                </div>
+              </div>
+              <span style={{ marginLeft: 'auto', color: 'var(--color-text-muted)', fontSize: 18 }}>→</span>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </div>

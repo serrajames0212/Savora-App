@@ -90,6 +90,7 @@ const App: React.FC = () => {
             <Route path="/shopping-list" element={<ProtectedRoute><ShoppingListPage /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
             <Route path="/community/reviews" element={<ProtectedRoute><CommunityReviewsPage /></ProtectedRoute>} />
+            <Route path="/community/reviews/:city" element={<ProtectedRoute><CommunityReviewsPage /></ProtectedRoute>} />
             <Route path="/community/:identitySlug" element={<ProtectedRoute><CommunityGroupPage /></ProtectedRoute>} />
           </Routes>
         </AppLayout>

@@ -44,6 +44,19 @@ const ChevronIcon: React.FC<{ open: boolean }> = ({ open }) => (
   </motion.svg>
 );
 
+const actionBtnStyle: React.CSSProperties = {
+  fontFamily: 'var(--font-label)',
+  fontSize: '11px',
+  letterSpacing: '0.06em',
+  color: 'var(--color-text-secondary)',
+  background: 'none',
+  border: '1px solid var(--color-border-subtle)',
+  borderRadius: '999px',
+  padding: '5px 12px',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap' as const,
+};
+
 const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, citySlug }) => {
   const navigate = useNavigate();
   const [whyOpen, setWhyOpen] = useState(false);
@@ -253,6 +266,86 @@ const RestaurantCard: React.FC<RestaurantCardProps> = ({ restaurant, citySlug })
           )}
         </AnimatePresence>
       </div>
+
+      {/* Address + actions row */}
+      {(restaurant.address || restaurant.googleRating || restaurant.googleMapsUrl) && (
+        <div
+          style={{
+            borderTop: '1px solid var(--color-border-subtle)',
+            paddingTop: 'var(--space-4)',
+            marginTop: 'var(--space-4)',
+            marginBottom: 'var(--space-4)',
+          }}
+        >
+          {restaurant.googleRating && (
+            <div
+              style={{
+                fontFamily: 'var(--font-label)',
+                fontSize: '12px',
+                color: 'var(--color-text-muted)',
+                marginBottom: 'var(--space-2)',
+              }}
+            >
+              {restaurant.googleRating.toFixed(1)} ★ Google
+            </div>
+          )}
+          {restaurant.address && (
+            <p
+              style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '13px',
+                color: 'var(--color-text-muted)',
+                margin: '0 0 var(--space-3)',
+                lineHeight: 1.5,
+              }}
+            >
+              {restaurant.address}
+            </p>
+          )}
+          <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+            {restaurant.address && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigator.clipboard.writeText(`${restaurant.name}, ${restaurant.address}`);
+                }}
+                style={actionBtnStyle}
+              >
+                Copy Address
+              </button>
+            )}
+            {restaurant.googleMapsUrl && (
+              <a
+                href={restaurant.googleMapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ ...actionBtnStyle, textDecoration: 'none' } as React.CSSProperties}
+              >
+                Open in Maps
+              </a>
+            )}
+            {restaurant.reservationUrl ? (
+              <a
+                href={restaurant.reservationUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{ ...actionBtnStyle, textDecoration: 'none', color: 'var(--color-accent-primary)', borderColor: 'rgba(201,169,110,0.4)' } as React.CSSProperties}
+              >
+                Reserve Table
+              </a>
+            ) : (
+              <button
+                onClick={(e) => e.stopPropagation()}
+                style={{ ...actionBtnStyle, opacity: 0.45, cursor: 'default' }}
+              >
+                Reserve Table · Coming soon
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Suggested dishes */}
       {restaurant.suggestedDishes.length > 0 && (

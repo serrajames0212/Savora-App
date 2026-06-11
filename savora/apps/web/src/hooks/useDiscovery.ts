@@ -19,6 +19,11 @@ export interface DiscoveryRestaurant {
   whyThisFits: string;
   suggestedDishes: SuggestedDish[];
   isAiGenerated?: boolean;
+  // Places API fields
+  address?: string;
+  googleRating?: number;
+  googleMapsUrl?: string;
+  reservationUrl?: string | null;
 }
 
 export interface CityData {

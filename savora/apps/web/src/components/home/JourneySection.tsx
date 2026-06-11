@@ -59,7 +59,14 @@ const JourneySection: React.FC = () => {
     });
   }
 
-  if (cards.length === 0) return null;
+  // Always show Fridge AI as the first card
+  cards.unshift({
+    id: 'fridge',
+    label: "What's in your kitchen?",
+    category: 'fridge ai',
+    href: '/fridge',
+    gradient: 'linear-gradient(135deg, rgba(201,169,110,0.12), var(--color-bg-elevated))',
+  });
 
   return (
     <section style={{ padding: '0 var(--space-5)' }}>

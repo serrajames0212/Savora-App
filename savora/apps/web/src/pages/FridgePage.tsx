@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Badge } from '../components/ui/Badge';
 import PaywallSheet from '../components/subscription/PaywallSheet';
+import IngredientSourcingSheet from '../components/recipe/IngredientSourcingSheet';
 import api from '../lib/api';
 
 const MOODS = ['Comfort', 'Adventure', 'Depth', 'Ritual', 'Lightness', 'Surprise', 'Discover Something New'];
@@ -67,6 +68,7 @@ export default function FridgePage() {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [recipe, setRecipe] = useState<FridgeRecipe | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
 
   const addIngredient = (name: string) => {
     const trimmed = name.trim().toLowerCase();
@@ -170,8 +172,13 @@ export default function FridgePage() {
           <h3 style={{ fontFamily: 'var(--font-display)', fontSize: 20, color: 'var(--color-text-primary)', marginBottom: 'var(--space-3)' }}>Ingredients</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', marginBottom: 'var(--space-6)' }}>
             {recipe.ingredients.map((ing, i) => (
-              <div key={i} style={{ fontSize: 14, color: 'var(--color-text-primary)' }}>
-                <span style={{ color: 'var(--color-text-muted)' }}>{ing.amount} {ing.unit}</span> {ing.name}
+              <div
+                key={i}
+                onClick={() => setSelectedIngredient(ing.name)}
+                style={{ fontSize: 14, color: 'var(--color-text-primary)', cursor: 'pointer' }}
+              >
+                <span style={{ color: 'var(--color-text-muted)' }}>{ing.amount} {ing.unit}</span>{' '}
+                <span style={{ borderBottom: '1px dotted rgba(201,169,110,0.4)' }}>{ing.name}</span>
                 {ing.note && <span style={{ color: 'var(--color-text-muted)', fontSize: 12 }}> · {ing.note}</span>}
               </div>
             ))}
@@ -196,6 +203,7 @@ export default function FridgePage() {
           </div>
         </div>
         {showPaywall && <PaywallSheet isOpen={showPaywall} onClose={() => setShowPaywall(false)} />}
+        <IngredientSourcingSheet ingredientName={selectedIngredient} onClose={() => setSelectedIngredient(null)} />
         <AnimatePresence>{mutation.isPending && <LoadingOverlay />}</AnimatePresence>
       </PageShell>
     );
