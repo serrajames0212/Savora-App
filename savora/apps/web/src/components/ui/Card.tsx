@@ -5,6 +5,7 @@ type CardVariant = 'surface' | 'elevated' | 'overlay';
 interface CardProps {
   variant?: CardVariant;
   className?: string;
+  style?: React.CSSProperties;
   children: React.ReactNode;
   onClick?: () => void;
 }
@@ -29,6 +30,7 @@ const variantStyles: Record<CardVariant, React.CSSProperties> = {
 export const Card: React.FC<CardProps> = ({
   variant = 'surface',
   className = '',
+  style,
   children,
   onClick,
 }) => {
@@ -40,6 +42,7 @@ export const Card: React.FC<CardProps> = ({
         padding: 'var(--space-6)',
         cursor: onClick ? 'pointer' : undefined,
         transition: `box-shadow var(--duration-normal) var(--ease-in-out-smooth)`,
+        ...style,
       }}
       className={className}
       onClick={onClick}

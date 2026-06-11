@@ -5,6 +5,8 @@ import dietaryRouter from './dietary';
 import insightsRouter from './insights';
 import homeRouter from './home';
 import recipeRouter from './recipe';
+import fridgeRouter from './fridge';
+import ingredientsRouter from './ingredients';
 import discoveryRouter from './discovery';
 import favoritesRouter from './favorites';
 import memoryRouter from './memory';
@@ -13,6 +15,8 @@ import subscriptionRouter from './subscription';
 import moodRouter from './mood';
 import exportRouter from './export';
 import profileRouter from './profile';
+import shoppingRouter from './shopping';
+import communityRouter from './community';
 
 const router = Router();
 
@@ -23,6 +27,8 @@ router.use('/dietary', dietaryRouter);
 router.use('/insights', insightsRouter);
 router.use('/home', homeRouter);
 router.use('/recipe', recipeRouter);
+router.use('/recipe/fridge', fridgeRouter);
+router.use('/ingredients', ingredientsRouter);
 router.use('/discovery', discoveryRouter);
 router.use('/favorites', favoritesRouter);
 router.use('/memory', memoryRouter);
@@ -30,5 +36,7 @@ router.use('/subscription', subscriptionRouter);
 router.use('/mood', moodRouter);
 router.use('/export', exportRouter);
 router.use('/profile', profileRouter);
+router.use('/shopping', shoppingRouter);
+router.use('/community', communityRouter);
 
 export default router;

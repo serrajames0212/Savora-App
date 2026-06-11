@@ -12,6 +12,25 @@ const router = Router();
 
 const SYSTEM_PROMPT = `You are Savora's Recipe Intelligence Engine. Generate a single original recipe that precisely matches the user's profile. You must NEVER violate their dietary restrictions. You must avoid their disliked ingredients. Create something genuinely original that has not appeared in their recent history.
 
+DIVERSITY RULES:
+- Do not repeat the primary protein from the user's last 3 recipes unless the mood specifically demands it
+- Do not repeat the same cooking method (e.g. "charred", "braised", "raw") in consecutive recipes
+- Vary the cuisine region with each generation — if the last recipe was Mediterranean, do not return Mediterranean again
+- Recipe titles must follow varied structures: do not always lead with a cooking verb, do not always name the protein first
+- Examples of structurally varied titles: "Koji-Cured Salmon with Yuzu Kosho", "A Study in Fennel and Fire", "Green Tahini Bowl, Charred Aubergine", "Late-Summer Tomato Consommé"
+
+GENOME ENFORCEMENT — NON-NEGOTIABLE:
+If saltScore > 70: the dish must have a prominent saline element (sea salt finish, cured component, preserved ingredient, briny sauce)
+If acidityScore > 70: the dish must have a distinct acid source (citrus, vinegar, ferment, wine reduction)
+If umamiScore > 70: the dish must have depth through umami (aged cheese, miso, dashi, slow-cooked stock, dried mushroom)
+If heatScore > 70: the dish must have deliberate heat (fresh chilli, fermented chilli paste, white pepper, Sichuan peppercorn)
+If smokeCharScore > 70: the dish must include a char or smoke element (grilled, ember-cooked, smoked ingredient, char-finished)
+If fatRichnessScore < 30: the dish must be lean — avoid butter-heavy, cream-heavy, or oil-saturated preparations
+If sweetScore < 25: avoid sweet glazes, fruit-forward profiles, honey finishes
+If mineralCleanScore > 70: the dish should feel clean, restrained, and ingredient-forward — no heavy sauces
+
+These are hard constraints. A user with acidityScore: 80 and fatRichnessScore: 20 must NEVER receive a cream sauce pasta.
+
 Respond ONLY with a valid JSON object matching the recipe schema. No markdown, no preamble, no explanation.`;
 
 function buildUserMessage(
@@ -50,7 +69,8 @@ RECIPE SCHEMA TO RETURN:
   "pairingSuggestion": string,
   "whyThisFits": string,
   "flavorProfile": { "dominant": string[], "secondary": string[], "texture": string, "aroma": string },
-  "fingerprint": { "mood": string, "coreBase": string, "cuisineInspiration": string, "cookingMethod": string, "acidSource": string, "aromaticLayer": string, "textureElement": string, "dietaryType": string }
+  "fingerprint": { "mood": string, "coreBase": string, "cuisineInspiration": string, "cookingMethod": string, "acidSource": string, "aromaticLayer": string, "textureElement": string, "dietaryType": string },
+  "titleFingerprint": { "firstWord": string, "primaryProtein": string, "cookingVerb": string, "regionModifier": string }
 }`;
 }
 
@@ -69,6 +89,12 @@ interface RawRecipe {
   whyThisFits: string;
   flavorProfile: { dominant: string[]; secondary: string[]; texture: string; aroma: string };
   fingerprint: RecipeFingerprint;
+  titleFingerprint: {
+    firstWord: string;
+    primaryProtein: string;
+    cookingVerb: string;
+    regionModifier: string;
+  };
 }
 
 async function callClaudeForRecipe(userMessage: string): Promise<RawRecipe> {
@@ -83,6 +109,73 @@ async function callClaudeForRecipe(userMessage: string): Promise<RawRecipe> {
   if (content.type !== 'text') throw new Error('Unexpected response type');
   const text = content.text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
   return JSON.parse(text) as RawRecipe;
+}
+
+interface RecipeQualityScore {
+  dietaryCompliance: boolean;
+  genomeAlignmentScore: number;
+  noveltyScore: number;
+  overallPass: boolean;
+}
+
+function scoreRecipeQuality(
+  recipe: RawRecipe,
+  flavorGenome: { saltScore: number; acidityScore: number; umamiScore: number; heatScore: number; smokeCharScore: number; fatRichnessScore: number; sweetScore: number; mineralCleanScore: number } | null,
+  recentFingerprints: RecipeFingerprint[],
+  guardrailPassed: boolean
+): RecipeQualityScore {
+  const dietaryCompliance = guardrailPassed;
+
+  // Check genome alignment (if no genome, skip enforcement)
+  let alignmentChecks = 0;
+  let alignmentPassed = 0;
+
+  if (flavorGenome) {
+    const fp = recipe.fingerprint;
+    const ingredientText = recipe.ingredients.map((i: { name: string; note: string }) => `${i.name} ${i.note}`).join(' ').toLowerCase();
+
+    if (flavorGenome.saltScore > 70) { alignmentChecks++; if (/salt|cured|brine|miso|soy|anchov|caper|preserved/.test(ingredientText)) alignmentPassed++; }
+    if (flavorGenome.acidityScore > 70) { alignmentChecks++; if (/lemon|lime|vinegar|citrus|ferment|pickle|wine|tamarind/.test(ingredientText)) alignmentPassed++; }
+    if (flavorGenome.umamiScore > 70) { alignmentChecks++; if (/miso|dashi|mushroom|parmesan|anchov|soy|stock|broth|aged|dried/.test(ingredientText)) alignmentPassed++; }
+    if (flavorGenome.heatScore > 70) { alignmentChecks++; if (/chilli|chili|pepper|sriracha|harissa|gochujang|jalapeño|scotch|cayenne/.test(ingredientText)) alignmentPassed++; }
+    if (flavorGenome.smokeCharScore > 70) { alignmentChecks++; if (/smoked|charred|grilled|ember|bbq|chipotle|char/.test(ingredientText) || /char|grill|smoke/.test(fp.cookingMethod.toLowerCase())) alignmentPassed++; }
+  }
+
+  const genomeAlignmentScore = alignmentChecks === 0 ? 100 : Math.round((alignmentPassed / alignmentChecks) * 100);
+
+  // Novelty: count matching fields against recent fingerprints
+  let minSimilarity = 0;
+  if (recentFingerprints.length > 0) {
+    const similarities = recentFingerprints.slice(0, 10).map((prev) => {
+      let matches = 0;
+      const fields: (keyof RecipeFingerprint)[] = ['coreBase', 'cookingMethod', 'cuisineInspiration'];
+      for (const f of fields) { if (recipe.fingerprint[f] === prev[f]) matches++; }
+      return matches;
+    });
+    minSimilarity = Math.min(...similarities);
+  }
+  const noveltyScore = minSimilarity >= 3 ? 20 : minSimilarity === 2 ? 60 : minSimilarity === 1 ? 80 : 100;
+
+  const overallPass = dietaryCompliance && genomeAlignmentScore >= 65 && noveltyScore >= 50;
+  return { dietaryCompliance, genomeAlignmentScore, noveltyScore, overallPass };
+}
+
+function checkTitleFingerprintSimilarity(
+  current: RawRecipe['titleFingerprint'],
+  recentRecipes: RawRecipe[]
+): boolean {
+  if (!current) return false;
+  const last30 = recentRecipes.slice(0, 30);
+  for (const prev of last30) {
+    if (!prev.titleFingerprint) continue;
+    let matches = 0;
+    if (current.firstWord === prev.titleFingerprint.firstWord) matches++;
+    if (current.primaryProtein === prev.titleFingerprint.primaryProtein) matches++;
+    if (current.cookingVerb === prev.titleFingerprint.cookingVerb) matches++;
+    if (current.regionModifier === prev.titleFingerprint.regionModifier) matches++;
+    if (matches >= 3) return true;
+  }
+  return false;
 }
 
 // POST /api/recipe/generate
@@ -142,7 +235,10 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
       recentFingerprints
     );
 
+    const typedFlavorGenome = flavorGenome as { saltScore: number; acidityScore: number; umamiScore: number; heatScore: number; smokeCharScore: number; fatRichnessScore: number; sweetScore: number; mineralCleanScore: number } | null;
+
     let recipe: RawRecipe | null = null;
+    let bestAttempt: { recipe: RawRecipe; score: number } | null = null;
     const maxAttempts = 3;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -156,21 +252,29 @@ router.post('/generate', authMiddleware, async (req: AuthRequest, res: Response)
 
       // Guardrail check
       const guardrailResult = checkDietaryGuardrails(raw, profile);
-      if (!guardrailResult.passed) {
-        if (attempt === maxAttempts - 1) {
-          // Use it anyway — best effort
-          recipe = raw;
-          break;
-        }
-        continue;
-      }
 
       // Fingerprint check
       const fingerprintResult = checkFingerprintSimilarity(raw.fingerprint, recentFingerprints);
       if (fingerprintResult.isTooSimilar) {
+        if (attempt === maxAttempts - 1 && !recipe) {
+          recipe = bestAttempt?.recipe ?? raw;
+          console.warn(`[recipe] All attempts failed quality checks — using best attempt for user ${userId}`);
+        }
+        continue;
+      }
+
+      // Quality score
+      const qualityScore = scoreRecipeQuality(raw, typedFlavorGenome, recentFingerprints, guardrailResult.passed);
+      const combinedScore = qualityScore.genomeAlignmentScore + qualityScore.noveltyScore;
+
+      if (!bestAttempt || combinedScore > bestAttempt.score) {
+        bestAttempt = { recipe: raw, score: combinedScore };
+      }
+
+      if (!qualityScore.overallPass) {
         if (attempt === maxAttempts - 1) {
-          recipe = raw;
-          break;
+          console.warn(`[recipe] All attempts failed overallPass — using best attempt (score: ${bestAttempt.score}) for user ${userId}`);
+          recipe = bestAttempt.recipe;
         }
         continue;
       }

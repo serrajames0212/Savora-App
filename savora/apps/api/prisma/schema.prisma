@@ -22,6 +22,10 @@ model User {
   favorites              Favorite[]
   subscription           Subscription?
   genomeSnapshots        GenomeSnapshot[]
+  shoppingList           ShoppingList?
+  communityPosts         CommunityPost[]
+  communityReplies       CommunityReply[]
+  restaurantReviews      RestaurantReview[]
 }
 
 model DietaryProfile {
@@ -92,6 +96,7 @@ model GeneratedRecipe {
   whyThisFits        String
   flavorProfile      Json
   fingerprint        Json
+  source             String   @default("mood")
   createdAt          DateTime @default(now())
   history            RecipeHistory?
 }
@@ -149,4 +154,92 @@ model SearchHistory {
   userId    String
   city      String
   createdAt DateTime @default(now())
+}
+
+model ShoppingList {
+  id        String         @id @default(cuid())
+  userId    String         @unique
+  user      User           @relation(fields: [userId], references: [id])
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  items     ShoppingItem[]
+}
+
+model ShoppingItem {
+  id             String       @id @default(cuid())
+  listId         String
+  list           ShoppingList @relation(fields: [listId], references: [id])
+  name           String
+  amount         String?
+  unit           String?
+  category       String?
+  isChecked      Boolean      @default(false)
+  sourceRecipeId String?
+  sourceTitle    String?
+  createdAt      DateTime     @default(now())
+}
+
+model PlacesCache {
+  id        String   @id @default(cuid())
+  cacheKey  String   @unique
+  city      String
+  query     String
+  data      Json
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model CommunityPost {
+  id           String         @id @default(cuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id])
+  identitySlug String
+  type         String
+  title        String?
+  body         String
+  cityRef      String?
+  restaurantRef String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  replies      CommunityReply[]
+}
+
+model CommunityReply {
+  id        String        @id @default(cuid())
+  postId    String
+  post      CommunityPost @relation(fields: [postId], references: [id])
+  userId    String
+  user      User          @relation(fields: [userId], references: [id])
+  body      String
+  createdAt DateTime      @default(now())
+}
+
+model RestaurantReview {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  restaurantName   String
+  restaurantCity   String
+  placeId          String?
+  body             String
+  visitedAt        DateTime?
+  culinaryIdentity String
+  createdAt        DateTime  @default(now())
+}
+
+model ContentReport {
+  id         String   @id @default(cuid())
+  reporterId String
+  targetType String
+  targetId   String
+  reason     String?
+  createdAt  DateTime @default(now())
+}
+
+model IngredientSourcingCache {
+  id           String   @id @default(cuid())
+  ingredientKey String  @unique
+  data         Json
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
 }

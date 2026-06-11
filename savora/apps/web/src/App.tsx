@@ -22,6 +22,11 @@ import FlavorGenomePage from './pages/FlavorGenomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DietaryProfilePage from './pages/DietaryProfilePage';
+import FridgePage from './pages/FridgePage';
+import ShoppingListPage from './pages/ShoppingListPage';
+import CommunityPage from './pages/CommunityPage';
+import CommunityGroupPage from './pages/CommunityGroupPage';
+import CommunityReviewsPage from './pages/CommunityReviewsPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +86,11 @@ const App: React.FC = () => {
             <Route path="/genome/identity" element={<ProtectedRoute><IdentityGenomePage /></ProtectedRoute>} />
             <Route path="/genome/flavor" element={<ProtectedRoute><FlavorGenomePage /></ProtectedRoute>} />
             <Route path="/profile/dietary" element={<ProtectedRoute><DietaryProfilePage /></ProtectedRoute>} />
+            <Route path="/fridge" element={<ProtectedRoute><FridgePage /></ProtectedRoute>} />
+            <Route path="/shopping-list" element={<ProtectedRoute><ShoppingListPage /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+            <Route path="/community/reviews" element={<ProtectedRoute><CommunityReviewsPage /></ProtectedRoute>} />
+            <Route path="/community/:identitySlug" element={<ProtectedRoute><CommunityGroupPage /></ProtectedRoute>} />
           </Routes>
         </AppLayout>
       </BrowserRouter>

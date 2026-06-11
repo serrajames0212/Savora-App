@@ -10,6 +10,7 @@ import { Card } from '../components/ui/Card';
 import PaywallSheet from '../components/subscription/PaywallSheet';
 import api from '../lib/api';
 import RecipeExportMenu from '../components/recipe/RecipeExportMenu';
+import IngredientSourcingSheet from '../components/recipe/IngredientSourcingSheet';
 
 const DAILY_COUNT_KEY = 'savora_daily_recipe_count';
 const PAYWALL_NUDGE_SESSION_KEY = 'savora_paywall_nudge_shown';
@@ -283,6 +284,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({
   const navigate = useNavigate();
   const favoriteMutation = useFavoriteRecipe();
   const [isFavorited, setIsFavorited] = useState(false);
+  const [selectedIngredient, setSelectedIngredient] = useState<string | null>(null);
 
   const handleFavorite = () => {
     favoriteMutation.mutate(recipe.id, {
@@ -550,6 +552,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({
             {recipe.ingredients.map((ing, idx) => (
               <div
                 key={idx}
+                onClick={() => setSelectedIngredient(ing.name)}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -557,6 +560,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                   backgroundColor: 'var(--color-bg-surface)',
                   borderRadius: 'var(--radius-sm)',
                   border: '1px solid var(--color-border-subtle)',
+                  cursor: 'pointer',
                 }}
               >
                 <span
@@ -791,6 +795,10 @@ const RecipeView: React.FC<RecipeViewProps> = ({
           Generate Another
         </Button>
       </div>
+      <IngredientSourcingSheet
+        ingredientName={selectedIngredient}
+        onClose={() => setSelectedIngredient(null)}
+      />
     </motion.div>
   );
 };
