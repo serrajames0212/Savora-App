@@ -65,7 +65,7 @@ router.get('/daily', authMiddleware, async (req: AuthRequest, res: Response): Pr
     const genomeContext = JSON.stringify({ identity, flavor });
 
     const result = await callClaude<DailyInsightResult>(
-      `You are Savora's Daily Taste Reflection engine. Generate a single daily insight for this user based on their culinary genome. Be intelligent, observational, never generic. Max 2 sentences. Return JSON: { "insight": string, "actionLabel": string, "actionMood": string }`,
+      `You are Paliato's Daily Taste Reflection engine. Generate a single daily insight for this user based on their culinary genome. Be intelligent, observational, never generic. Max 2 sentences. Return JSON: { "insight": string, "actionLabel": string, "actionMood": string }`,
       genomeContext
     );
 
@@ -98,7 +98,7 @@ router.get('/seasonal', authMiddleware, async (req: AuthRequest, res: Response):
     const genomeContext = JSON.stringify({ identity, flavor, currentSeason: season });
 
     const result = await callClaude<SeasonalInsightResult>(
-      `You are Savora's Seasonal Intelligence engine. Given the current season and the user's culinary genome, generate a 1-2 sentence seasonal insight about what to eat, seek, or explore right now. Return JSON: { "insight": string, "season": string }`,
+      `You are Paliato's Seasonal Intelligence engine. Given the current season and the user's culinary genome, generate a 1-2 sentence seasonal insight about what to eat, seek, or explore right now. Return JSON: { "insight": string, "season": string }`,
       genomeContext
     );
 

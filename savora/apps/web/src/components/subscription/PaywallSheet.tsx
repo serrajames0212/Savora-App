@@ -89,7 +89,7 @@ const PaywallSheet: React.FC<PaywallSheetProps> = ({ isOpen, onClose }) => {
             marginBottom: 'var(--space-4)',
           }}
         >
-          savora reserve
+          paliato reserve
         </div>
 
         {/* Headline */}
@@ -115,7 +115,7 @@ const PaywallSheet: React.FC<PaywallSheetProps> = ({ isOpen, onClose }) => {
             marginBottom: 'var(--space-6)',
           }}
         >
-          Savora Reserve gives you endless adaptive recipes, advanced taste evolution, and premium
+          Paliato Reserve gives you endless adaptive recipes, advanced taste evolution, and premium
           culinary discovery tailored entirely to you.
         </p>
 

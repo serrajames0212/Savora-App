@@ -43,7 +43,7 @@ process.on('uncaughtException', (err) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Savora API running on port ${PORT}`);
+  console.log(`Paliato API running on port ${PORT}`);
 });
 
 export default app;

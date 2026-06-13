@@ -29,7 +29,7 @@ const Step1Welcome: React.FC<Step1WelcomeProps> = ({ onNext }) => {
       >
         <img
           src="/assets/brand/favicon.svg"
-          alt="Savora"
+          alt="Paliato"
           style={{ width: '80px', height: '80px' }}
         />
       </motion.div>

@@ -108,7 +108,7 @@ const CommunityPage: React.FC = () => {
               letterSpacing: '-0.01em',
             }}
           >
-            The Savora Community
+            The Paliato Community
           </h1>
           <p
             style={{

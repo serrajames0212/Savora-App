@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
 import { FlavorWheel } from '../components/genome/FlavorWheel';
 import PageShell from '../components/layout/PageShell';
-import type { FlavorGenome } from '@savora/shared-types';
+import type { FlavorGenome } from '@paliato/shared-types';
 
 interface AxisScore {
   axis: string;

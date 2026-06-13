@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { User } from '@savora/shared-types';
+import type { User } from '@paliato/shared-types';
 
 interface UserStore {
   user: User | null;
@@ -19,6 +19,6 @@ export const useUserStore = create<UserStore>()(
       setUser: (user, token) => set({ user, token, isAuthenticated: true }),
       logout: () => set({ user: null, token: null, isAuthenticated: false }),
     }),
-    { name: 'savora-user' }
+    { name: 'paliato-user' }
   )
 );

@@ -59,7 +59,7 @@ const EmblemPulse: React.FC<{ cityName: string }> = ({ cityName }) => {
           textTransform: 'lowercase',
         }}
       >
-        savora
+        paliato
       </motion.div>
       <motion.p
         key={phraseIndex}

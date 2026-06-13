@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '../ui/Badge';
 import { useRemoveFavorite } from '../../hooks/useFavorites';
-import type { Favorite } from '@savora/shared-types';
+import type { Favorite } from '@paliato/shared-types';
 import api from '../../lib/api';
 import { useToastStore } from '../../stores/useToastStore';
 

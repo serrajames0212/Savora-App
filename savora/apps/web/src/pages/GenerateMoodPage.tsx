@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGenerateRecipe, useFavoriteRecipe } from '../hooks/useRecipe';
 import { useRecipeStore } from '../stores/useRecipeStore';
-import type { GeneratedRecipe } from '@savora/shared-types';
+import type { GeneratedRecipe } from '@paliato/shared-types';
 import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -12,8 +12,8 @@ import api from '../lib/api';
 import RecipeExportMenu from '../components/recipe/RecipeExportMenu';
 import IngredientSourcingSheet from '../components/recipe/IngredientSourcingSheet';
 
-const DAILY_COUNT_KEY = 'savora_daily_recipe_count';
-const PAYWALL_NUDGE_SESSION_KEY = 'savora_paywall_nudge_shown';
+const DAILY_COUNT_KEY = 'paliato_daily_recipe_count';
+const PAYWALL_NUDGE_SESSION_KEY = 'paliato_paywall_nudge_shown';
 
 // ─── Daily recipe count helpers ──────────────────────────────────────────────
 

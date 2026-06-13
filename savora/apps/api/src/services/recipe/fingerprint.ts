@@ -1,4 +1,4 @@
-import type { RecipeFingerprint } from '@savora/shared-types';
+import type { RecipeFingerprint } from '@paliato/shared-types';
 
 export interface FingerprintSimilarity {
   isTooSimilar: boolean;

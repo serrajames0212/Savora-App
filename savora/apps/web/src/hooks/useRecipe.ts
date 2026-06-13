@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
-import type { GeneratedRecipe, RecipeFingerprint } from '@savora/shared-types';
+import type { GeneratedRecipe, RecipeFingerprint } from '@paliato/shared-types';
 import { useRecipeStore } from '../stores/useRecipeStore';
 
 interface GenerateRecipePayload {

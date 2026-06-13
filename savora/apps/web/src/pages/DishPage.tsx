@@ -60,7 +60,7 @@ const DishPage: React.FC = () => {
             letterSpacing: '0.1em',
           }}
         >
-          savora
+          paliato
         </motion.div>
       </div>
     );

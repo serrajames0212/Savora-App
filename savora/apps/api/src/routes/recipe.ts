@@ -6,11 +6,11 @@ import prisma from '../lib/prisma';
 import { checkDietaryGuardrails } from '../services/dietary/guardrail';
 import { checkFingerprintSimilarity } from '../services/recipe/fingerprint';
 import { checkAndTriggerEvolution } from '../services/genome/evolutionTrigger';
-import type { RecipeFingerprint, GeneratedRecipe } from '@savora/shared-types';
+import type { RecipeFingerprint, GeneratedRecipe } from '@paliato/shared-types';
 
 const router = Router();
 
-const SYSTEM_PROMPT = `You are Savora's Recipe Intelligence Engine. Generate a single original recipe that precisely matches the user's profile. You must NEVER violate their dietary restrictions. You must avoid their disliked ingredients. Create something genuinely original that has not appeared in their recent history.
+const SYSTEM_PROMPT = `You are Paliato's Recipe Intelligence Engine. Generate a single original recipe that precisely matches the user's profile. You must NEVER violate their dietary restrictions. You must avoid their disliked ingredients. Create something genuinely original that has not appeared in their recent history.
 
 DIVERSITY RULES:
 - Do not repeat the primary protein from the user's last 3 recipes unless the mood specifically demands it

@@ -68,7 +68,7 @@ Return this schema:
     model: 'claude-sonnet-4-20250514',
     max_tokens: 1500,
     temperature: 0.5,
-    system: `You are Savora's Taste Evolution Intelligence. Analyze the user's genome history and generate an evolution narrative. Be honest — if there's insufficient data, say so. Never fabricate shifts that aren't visible in the data.
+    system: `You are Paliato's Taste Evolution Intelligence. Analyze the user's genome history and generate an evolution narrative. Be honest — if there's insufficient data, say so. Never fabricate shifts that aren't visible in the data.
 
 Respond ONLY with valid JSON. No markdown.`,
     messages: [{ role: 'user', content: userMessage }],
@@ -152,7 +152,7 @@ router.get('/evolution/weekly-insight', authMiddleware, async (req: AuthRequest,
       model: 'claude-sonnet-4-20250514',
       max_tokens: 300,
       temperature: 0.5,
-      system: 'You are Savora\'s Taste Intelligence. Generate a single sentence weekly taste insight. Respond ONLY with valid JSON. No markdown.',
+      system: 'You are Paliato\'s Taste Intelligence. Generate a single sentence weekly taste insight. Respond ONLY with valid JSON. No markdown.',
       messages: [
         {
           role: 'user',
@@ -199,7 +199,7 @@ router.get('/identity/why', authMiddleware, async (req: AuthRequest, res: Respon
       model: 'claude-sonnet-4-20250514',
       max_tokens: 400,
       temperature: 0.5,
-      system: 'You are Savora\'s Culinary Identity Intelligence. Respond ONLY with valid JSON. No markdown.',
+      system: 'You are Paliato\'s Culinary Identity Intelligence. Respond ONLY with valid JSON. No markdown.',
       messages: [
         {
           role: 'user',

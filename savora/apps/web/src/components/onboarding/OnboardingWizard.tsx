@@ -17,7 +17,7 @@ import Step7Flavors from './Step7Flavors';
 import Step8Generating from './Step8Generating';
 
 const TOTAL_STEPS = 8;
-const STORAGE_KEY = 'savora_onboarding_progress';
+const STORAGE_KEY = 'paliato_onboarding_progress';
 
 interface WizardState {
   dietaryRestrictions: string[];
@@ -255,8 +255,8 @@ const OnboardingWizard: React.FC = () => {
   };
 
   const handleComplete = (
-    culinaryIdentity: import('@savora/shared-types').CulinaryIdentityGenome,
-    flavorGenome: import('@savora/shared-types').FlavorGenome
+    culinaryIdentity: import('@paliato/shared-types').CulinaryIdentityGenome,
+    flavorGenome: import('@paliato/shared-types').FlavorGenome
   ) => {
     // Clear saved progress after successful genome generation
     localStorage.removeItem(STORAGE_KEY);

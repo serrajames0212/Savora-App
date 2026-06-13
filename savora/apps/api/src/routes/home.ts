@@ -55,7 +55,7 @@ router.get('/recommendation', authMiddleware, async (req: AuthRequest, res: Resp
     const genomeContext = JSON.stringify({ identity, flavor });
 
     const result = await callClaude<RecommendationResult>(
-      `You are Savora's Tonight's Recommendation engine. Based on the user's culinary genome, suggest a perfect dish to seek tonight, along with a city where it shines. Return only JSON: { "city": string, "dish": string, "matchScore": number } where matchScore is 0-100.`,
+      `You are Paliato's Tonight's Recommendation engine. Based on the user's culinary genome, suggest a perfect dish to seek tonight, along with a city where it shines. Return only JSON: { "city": string, "dish": string, "matchScore": number } where matchScore is 0-100.`,
       genomeContext
     );
 
@@ -84,7 +84,7 @@ router.get('/discovery-preview', authMiddleware, async (req: AuthRequest, res: R
     const genomeContext = JSON.stringify({ identity, flavor });
 
     const result = await callClaude<DiscoveryPreviewResult>(
-      `You are Savora's Discovery engine. Pick an aspirational city that deeply aligns with the user's culinary genome. Return only JSON: { "city": string, "atmosphereDescription": string, "topDish": string }`,
+      `You are Paliato's Discovery engine. Pick an aspirational city that deeply aligns with the user's culinary genome. Return only JSON: { "city": string, "atmosphereDescription": string, "topDish": string }`,
       genomeContext
     );
 

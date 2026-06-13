@@ -134,7 +134,7 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response): Promise
       date: h.createdAt.toISOString().slice(0, 10),
     }));
 
-    const systemPrompt = `You are Savora's Taste Memory Intelligence. Analyze this user's food history and generate their Memory Vault intelligence. Be honest — if there's not enough data, say so in dataNote. Never fabricate patterns you cannot see in the data.
+    const systemPrompt = `You are Paliato's Taste Memory Intelligence. Analyze this user's food history and generate their Memory Vault intelligence. Be honest — if there's not enough data, say so in dataNote. Never fabricate patterns you cannot see in the data.
 
 Respond ONLY with valid JSON. No markdown.`;
 

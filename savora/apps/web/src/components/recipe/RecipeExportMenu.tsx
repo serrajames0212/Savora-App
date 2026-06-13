@@ -62,7 +62,7 @@ const RecipeExportMenu: React.FC<RecipeExportMenuProps> = ({ recipeId }) => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'savora_recipe_card.svg';
+      a.download = 'paliato_recipe_card.svg';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

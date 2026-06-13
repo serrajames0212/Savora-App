@@ -14,7 +14,7 @@ interface IdentityDetail {
   identityTitle: string;
   keywords: string[];
   description: string;
-  whySavoraAssignedThis: string;
+  whyPaliatoAssignedThis: string;
   behaviorScores: BehaviorScore[];
   cuisineAffinity: { cuisine: string; score: number }[];
   atmospherePreferences: string[];
@@ -303,7 +303,7 @@ const IdentityGenomePage: React.FC = () => {
                       color: 'var(--color-accent-muted)',
                     }}
                   >
-                    Why Savora assigned this
+                    Why Paliato assigned this
                   </span>
                   <span
                     style={{
@@ -335,7 +335,7 @@ const IdentityGenomePage: React.FC = () => {
                         margin: 0,
                       }}
                     >
-                      {data.whySavoraAssignedThis}
+                      {data.whyPaliatoAssignedThis}
                     </p>
                   </motion.div>
                 )}

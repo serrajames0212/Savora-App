@@ -1,6 +1,6 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
-import type { Subscription } from '@savora/shared-types';
+import type { Subscription } from '@paliato/shared-types';
 import { useSubscriptionStore } from '../stores/useSubscriptionStore';
 
 export function useSubscriptionStatus() {

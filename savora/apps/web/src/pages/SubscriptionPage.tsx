@@ -102,7 +102,7 @@ const SubscriptionPage: React.FC = () => {
           textTransform: 'lowercase',
         }}
       >
-        savora reserve
+        paliato reserve
       </h1>
 
       {/* Banners */}
@@ -119,7 +119,7 @@ const SubscriptionPage: React.FC = () => {
             color: 'var(--color-accent-primary)',
           }}
         >
-          Welcome to Savora Reserve.
+          Welcome to Paliato Reserve.
         </div>
       )}
       {banner === 'canceled' && (
@@ -159,7 +159,7 @@ const SubscriptionPage: React.FC = () => {
               marginBottom: 'var(--space-2)',
             }}
           >
-            You're on Savora Reserve
+            You're on Paliato Reserve
           </div>
 
           {subscription.renewalDate && (
@@ -261,7 +261,7 @@ const SubscriptionPage: React.FC = () => {
               letterSpacing: '0.06em',
             }}
           >
-            Savora Free
+            Paliato Free
           </p>
 
           <h2
@@ -285,7 +285,7 @@ const SubscriptionPage: React.FC = () => {
               marginBottom: 'var(--space-6)',
             }}
           >
-            Savora Reserve gives you endless adaptive recipes, advanced taste evolution, and premium
+            Paliato Reserve gives you endless adaptive recipes, advanced taste evolution, and premium
             culinary discovery tailored entirely to you.
           </p>
 

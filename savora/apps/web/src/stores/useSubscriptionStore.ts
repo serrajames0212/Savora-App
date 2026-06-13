@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { SubscriptionStatus } from '@savora/shared-types';
+import type { SubscriptionStatus } from '@paliato/shared-types';
 
 interface SubscriptionStore {
   status: SubscriptionStatus;

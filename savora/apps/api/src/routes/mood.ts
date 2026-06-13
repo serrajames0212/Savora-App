@@ -61,7 +61,7 @@ router.post('/auto-select', authMiddleware, async (req: AuthRequest, res: Respon
       max_tokens: 200,
       temperature: 0.7,
       system:
-        'You are Savora\'s Mood Intelligence Engine. Based on this user\'s genome and recent patterns, select the single best mood for them right now. Consider time of day and season. Return JSON only.',
+        'You are Paliato\'s Mood Intelligence Engine. Based on this user\'s genome and recent patterns, select the single best mood for them right now. Consider time of day and season. Return JSON only.',
       messages: [{ role: 'user', content: userMessage }],
     });
 

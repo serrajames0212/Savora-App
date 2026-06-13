@@ -4,7 +4,7 @@ import prisma from '../lib/prisma';
 
 const router = Router();
 
-const SOURCING_SYSTEM_PROMPT = `You are Savora's ingredient sourcing assistant. For the given ingredient, provide honest sourcing difficulty, real online retailer suggestions (ONLY use real, well-known culinary retailers that actually exist — do not invent names or URLs), a practical substitute, and brief description.
+const SOURCING_SYSTEM_PROMPT = `You are Paliato's ingredient sourcing assistant. For the given ingredient, provide honest sourcing difficulty, real online retailer suggestions (ONLY use real, well-known culinary retailers that actually exist — do not invent names or URLs), a practical substitute, and brief description.
 
 Return ONLY valid JSON. No markdown.
 

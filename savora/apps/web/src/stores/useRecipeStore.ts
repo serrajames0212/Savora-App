@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { GeneratedRecipe } from '@savora/shared-types';
+import type { GeneratedRecipe } from '@paliato/shared-types';
 
 interface RecipeStore {
   currentRecipe: GeneratedRecipe | null;

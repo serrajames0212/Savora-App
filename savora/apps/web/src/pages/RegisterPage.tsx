@@ -118,7 +118,7 @@ const RegisterPage: React.FC = () => {
               textTransform: 'uppercase',
             }}
           >
-            savora
+            paliato
           </span>
         </div>
 

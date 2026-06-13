@@ -7,7 +7,7 @@ import { checkDietaryGuardrails } from '../services/dietary/guardrail';
 
 const router = Router();
 
-const FRIDGE_SYSTEM_PROMPT = `You are Savora's Fridge Intelligence Engine. Generate a single premium recipe using primarily the user's available ingredients. The recipe should feel intentional and elevated — not improvised. Apply the user's genome and dietary profile strictly. You may suggest a small number of pantry staples or missing ingredients that would significantly improve the dish, but the core recipe must be built around what they have.
+const FRIDGE_SYSTEM_PROMPT = `You are Paliato's Fridge Intelligence Engine. Generate a single premium recipe using primarily the user's available ingredients. The recipe should feel intentional and elevated — not improvised. Apply the user's genome and dietary profile strictly. You may suggest a small number of pantry staples or missing ingredients that would significantly improve the dish, but the core recipe must be built around what they have.
 
 GENOME ENFORCEMENT — NON-NEGOTIABLE:
 If saltScore > 70: the dish must have a prominent saline element

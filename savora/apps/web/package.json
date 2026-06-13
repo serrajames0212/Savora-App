@@ -1,5 +1,5 @@
 {
-  "name": "@savora/web",
+  "name": "@paliato/web",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@savora/shared-types": "*",
+    "@paliato/shared-types": "*",
     "@tanstack/react-query": "^5.17.19",
     "axios": "^1.6.5",
     "framer-motion": "^10.18.0",

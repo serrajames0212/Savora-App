@@ -76,7 +76,7 @@ async function callClaudeWithRetry<T>(
   throw lastError ?? new Error('Failed after retries');
 }
 
-const CULINARY_IDENTITY_SYSTEM = `You are Savora's Culinary Identity Engine. Based on the user's onboarding data, generate their Culinary Identity Genome as a JSON object.
+const CULINARY_IDENTITY_SYSTEM = `You are Paliato's Culinary Identity Engine. Based on the user's onboarding data, generate their Culinary Identity Genome as a JSON object.
 
 Respond ONLY with a valid JSON object. No markdown, no explanation.
 
@@ -99,7 +99,7 @@ Schema:
   "evolutionNote": string
 }`;
 
-const FLAVOR_GENOME_SYSTEM = `You are Savora's Flavor Genome Engine. Based on the user's flavor preference sliders, generate their Flavor Genome as a JSON object.
+const FLAVOR_GENOME_SYSTEM = `You are Paliato's Flavor Genome Engine. Based on the user's flavor preference sliders, generate their Flavor Genome as a JSON object.
 
 Respond ONLY with a valid JSON object. No markdown, no explanation.
 
@@ -453,7 +453,7 @@ async function getEvolutionInsight(userId: string): Promise<string> {
   });
 
   const result = await callClaudeWithRetry<{ insight: string }>(
-    `You are Savora's flavor evolution narrator. Based on the user's recent food history, write ONE short sentence describing how their palate is evolving. Tone: intelligent, observational. Return JSON: { "insight": string }`,
+    `You are Paliato's flavor evolution narrator. Based on the user's recent food history, write ONE short sentence describing how their palate is evolving. Tone: intelligent, observational. Return JSON: { "insight": string }`,
     payload
   );
 
@@ -563,7 +563,7 @@ router.get('/identity/detail', authMiddleware, async (req: AuthRequest, res: Res
       identitySubtitle: identity.identitySubtitle,
       keywords,
       description: identity.identitySubtitle,
-      whySavoraAssignedThis: whyCache.get(userId)?.explanation ?? null,
+      whyPaliatoAssignedThis: whyCache.get(userId)?.explanation ?? null,
       behaviorScores,
       cuisineAffinity,
       atmospherePreferences: identity.diningAtmospherePreference,
@@ -597,7 +597,7 @@ router.get('/identity/why', authMiddleware, async (req: AuthRequest, res: Respon
     }
 
     const result = await callClaudeWithRetry<{ explanation: string }>(
-      `You are Savora's identity assignment narrator. In 2-3 sentences, explain in second person why the user was assigned their Culinary Identity. Be specific — reference their actual genome data. Tone: intelligent, direct, non-generic. No filler phrases. Return JSON: { "explanation": string }`,
+      `You are Paliato's identity assignment narrator. In 2-3 sentences, explain in second person why the user was assigned their Culinary Identity. Be specific — reference their actual genome data. Tone: intelligent, direct, non-generic. No filler phrases. Return JSON: { "explanation": string }`,
       JSON.stringify({ identityGenome: identity, flavorGenome })
     );
 

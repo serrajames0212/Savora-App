@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
-import type { CulinaryIdentityGenome, FlavorGenome } from '@savora/shared-types';
+import type { CulinaryIdentityGenome, FlavorGenome } from '@paliato/shared-types';
 
 export interface OnboardingData {
   dietaryRestrictions: string[];

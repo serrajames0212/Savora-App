@@ -67,7 +67,7 @@ router.post('/city', authMiddleware, async (req: AuthRequest, res: Response): Pr
       prisma.flavorGenome.findUnique({ where: { userId } }),
     ]);
 
-    const systemPrompt = `You are Savora's Discovery Intelligence Engine. Generate personalized restaurant and dish recommendations for a user visiting a specific city. You MUST respect all dietary restrictions — any dish violating them must not appear. Apply the two-stage genome matching: Culinary Identity Genome for restaurants (atmosphere, cuisine style, identity alignment), Flavor Genome for dishes (flavor axis matching).
+    const systemPrompt = `You are Paliato's Discovery Intelligence Engine. Generate personalized restaurant and dish recommendations for a user visiting a specific city. You MUST respect all dietary restrictions — any dish violating them must not appear. Apply the two-stage genome matching: Culinary Identity Genome for restaurants (atmosphere, cuisine style, identity alignment), Flavor Genome for dishes (flavor axis matching).
 
 Be honest about match scores — do not inflate them. If you have limited knowledge of a city, say so in limitedCoverageNote.
 

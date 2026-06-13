@@ -59,7 +59,7 @@ const RestaurantPage: React.FC = () => {
             letterSpacing: '0.1em',
           }}
         >
-          savora
+          paliato
         </motion.div>
       </div>
     );

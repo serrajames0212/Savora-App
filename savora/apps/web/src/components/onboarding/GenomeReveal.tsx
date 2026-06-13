@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import type { CulinaryIdentityGenome, FlavorGenome } from '@savora/shared-types';
+import type { CulinaryIdentityGenome, FlavorGenome } from '@paliato/shared-types';
 import { Button } from '../ui/Button';
 import { FlavorWheel } from '../genome/FlavorWheel';
 

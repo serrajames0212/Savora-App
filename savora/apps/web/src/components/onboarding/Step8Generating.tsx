@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
-import type { CulinaryIdentityGenome, FlavorGenome } from '@savora/shared-types';
+import type { CulinaryIdentityGenome, FlavorGenome } from '@paliato/shared-types';
 import type { OnboardingData } from '../../hooks/useGenerateGenome';
 import GenomeReveal from './GenomeReveal';
 
@@ -141,7 +141,7 @@ const Step8Generating: React.FC<Step8GeneratingProps> = ({
       >
         <img
           src="/assets/brand/favicon.svg"
-          alt="Savora"
+          alt="Paliato"
           style={{ width: '72px', height: '72px' }}
         />
       </motion.div>

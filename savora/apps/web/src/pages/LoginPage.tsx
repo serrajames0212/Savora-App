@@ -93,7 +93,7 @@ const LoginPage: React.FC = () => {
               textTransform: 'uppercase',
             }}
           >
-            savora
+            paliato
           </span>
         </div>
 
@@ -201,7 +201,7 @@ const LoginPage: React.FC = () => {
               marginBottom: 0,
             }}
           >
-            New to Savora?{' '}
+            New to Paliato?{' '}
             <Link
               to="/register"
               style={{

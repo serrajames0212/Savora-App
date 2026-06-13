@@ -73,7 +73,7 @@ const HeroSection: React.FC = () => {
           zIndex: 1,
         }}
       >
-        savora
+        paliato
       </div>
 
       {/* Headline */}

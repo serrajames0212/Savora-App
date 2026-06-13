@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/Badge';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import PaywallSheet from '../components/subscription/PaywallSheet';
-import type { MemoryChapter } from '@savora/shared-types';
+import type { MemoryChapter } from '@paliato/shared-types';
 import { useIsReserve } from '../hooks/useIsReserve';
 
 // ─── Skeleton ───────────────────────────────────────────────────────────────
@@ -282,7 +282,7 @@ const GatedCard: React.FC<{ onUpgrade: () => void }> = ({ onUpgrade }) => (
         lineHeight: 1.55,
       }}
     >
-      Unlock the complete Memory Vault with Savora Reserve.
+      Unlock the complete Memory Vault with Paliato Reserve.
     </p>
     <Button variant="primary" size="sm" onClick={onUpgrade}>
       Unlock full history

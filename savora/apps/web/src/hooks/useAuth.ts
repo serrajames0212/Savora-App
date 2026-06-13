@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import api from '../lib/api';
 import { useUserStore } from '../stores/useUserStore';
-import type { User } from '@savora/shared-types';
+import type { User } from '@paliato/shared-types';
 
 interface AuthResponse {
   user: User;

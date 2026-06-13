@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CulinaryIdentityGenome, FlavorGenome } from '@savora/shared-types';
+import type { CulinaryIdentityGenome, FlavorGenome } from '@paliato/shared-types';
 
 interface GenomeStore {
   culinaryIdentity: CulinaryIdentityGenome | null;
@@ -17,6 +17,6 @@ export const useGenomeStore = create<GenomeStore>()(
       setCulinaryIdentity: (genome) => set({ culinaryIdentity: genome }),
       setFlavorGenome: (genome) => set({ flavorGenome: genome }),
     }),
-    { name: 'savora-genome' }
+    { name: 'paliato-genome' }
   )
 );

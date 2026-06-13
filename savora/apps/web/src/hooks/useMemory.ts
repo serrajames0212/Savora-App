@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import api from '../lib/api';
-import type { MemoryVaultData } from '@savora/shared-types';
+import type { MemoryVaultData } from '@paliato/shared-types';
 
 export function useMemoryVault() {
   return useQuery<MemoryVaultData>({
