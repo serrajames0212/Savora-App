@@ -5,3 +5,4 @@ build/
 *.local
 .DS_Store
 savora/node_modules/
+.claude/
