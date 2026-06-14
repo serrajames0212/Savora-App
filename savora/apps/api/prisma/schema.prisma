@@ -8,12 +8,13 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  email              String   @unique
+  name               String
+  password           String
+  onboardingComplete Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   dietaryProfile         DietaryProfile?
   culinaryIdentityGenome CulinaryIdentityGenome?
@@ -22,6 +23,7 @@ model User {
   favorites              Favorite[]
   subscription           Subscription?
   genomeSnapshots        GenomeSnapshot[]
+  mealLogs               MealLog[]
   shoppingList           ShoppingList?
   communityPosts         CommunityPost[]
   communityReplies       CommunityReply[]
@@ -137,6 +139,18 @@ model GenomeSnapshot {
   data      Json
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
+}
+
+model MealLog {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  recipeId   String?
+  recipeName String
+  moodTag    String?
+  notes      String?
+  loggedAt   DateTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 model DailyUsage {

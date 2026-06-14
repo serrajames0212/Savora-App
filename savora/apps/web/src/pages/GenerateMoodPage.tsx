@@ -11,6 +11,7 @@ import PaywallSheet from '../components/subscription/PaywallSheet';
 import api from '../lib/api';
 import RecipeExportMenu from '../components/recipe/RecipeExportMenu';
 import IngredientSourcingSheet from '../components/recipe/IngredientSourcingSheet';
+import LogMealSheet from '../components/meal/LogMealSheet';
 
 const DAILY_COUNT_KEY = 'paliato_daily_recipe_count';
 const PAYWALL_NUDGE_SESSION_KEY = 'paliato_paywall_nudge_shown';
@@ -272,6 +273,7 @@ interface RecipeViewProps {
   isGenerating: boolean;
   onOpenPaywall: () => void;
   showNudge: boolean;
+  onLogMeal: () => void;
 }
 
 const RecipeView: React.FC<RecipeViewProps> = ({
@@ -280,6 +282,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({
   isGenerating,
   onOpenPaywall,
   showNudge,
+  onLogMeal,
 }) => {
   const navigate = useNavigate();
   const favoriteMutation = useFavoriteRecipe();
@@ -795,6 +798,11 @@ const RecipeView: React.FC<RecipeViewProps> = ({
           Generate Another
         </Button>
       </div>
+      <div style={{ padding: '0 var(--space-5)', marginTop: 'var(--space-3)' }}>
+        <Button variant="ghost" style={{ width: '100%' }} onClick={onLogMeal}>
+          Log This Meal
+        </Button>
+      </div>
       <IngredientSourcingSheet
         ingredientName={selectedIngredient}
         onClose={() => setSelectedIngredient(null)}
@@ -810,6 +818,7 @@ const GenerateMoodPage: React.FC = () => {
   const [recipe, setRecipe] = useState<GeneratedRecipe | null>(null);
   const [showPaywall, setShowPaywall] = useState(false);
   const [showNudge, setShowNudge] = useState(false);
+  const [showLogMeal, setShowLogMeal] = useState(false);
   const generateMutation = useGenerateRecipe();
   const setCurrentRecipe = useRecipeStore((s) => s.setCurrentRecipe);
 
@@ -943,12 +952,16 @@ const GenerateMoodPage: React.FC = () => {
             isGenerating={generateMutation.isPending}
             onOpenPaywall={() => setShowPaywall(true)}
             showNudge={showNudge}
+            onLogMeal={() => setShowLogMeal(true)}
           />
         )}
       </AnimatePresence>
 
       {showPaywall && (
         <PaywallSheet isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
+      )}
+      {recipe && (
+        <LogMealSheet isOpen={showLogMeal} onClose={() => setShowLogMeal(false)} recipeName={recipe.title} recipeId={recipe.id} />
       )}
     </>
   );

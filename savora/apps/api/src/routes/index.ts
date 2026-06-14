@@ -17,6 +17,7 @@ import exportRouter from './export';
 import profileRouter from './profile';
 import shoppingRouter from './shopping';
 import communityRouter from './community';
+import mealLogRouter from './mealLog';
 
 const router = Router();
 
@@ -38,5 +39,6 @@ router.use('/export', exportRouter);
 router.use('/profile', profileRouter);
 router.use('/shopping', shoppingRouter);
 router.use('/community', communityRouter);
+router.use('/meal-log', mealLogRouter);
 
 export default router;

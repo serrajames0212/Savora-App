@@ -27,6 +27,8 @@ import ShoppingListPage from './pages/ShoppingListPage';
 import CommunityPage from './pages/CommunityPage';
 import CommunityGroupPage from './pages/CommunityGroupPage';
 import CommunityReviewsPage from './pages/CommunityReviewsPage';
+import RecipeDetailPage from './pages/RecipeDetailPage';
+import TasteEvolutionPage from './pages/TasteEvolutionPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,12 +54,16 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 const RootRedirect: React.FC = () => {
   const isAuthenticated = useUserStore((s) => s.isAuthenticated);
-  return <Navigate to={isAuthenticated ? '/home' : '/onboarding'} replace />;
+  const onboardingComplete = useUserStore((s) => s.onboardingComplete);
+  if (!isAuthenticated) return <Navigate to="/onboarding" replace />;
+  if (!onboardingComplete) return <Navigate to="/onboarding" replace />;
+  return <Navigate to="/home" replace />;
 };
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useUserStore();
+  const { isAuthenticated, onboardingComplete } = useUserStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!onboardingComplete) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
 
@@ -80,9 +86,11 @@ const App: React.FC = () => {
             <Route path="/discovery/:city/:restaurantSlug" element={<ProtectedRoute><RestaurantPage /></ProtectedRoute>} />
             <Route path="/discovery/:city/:restaurantSlug/:dishSlug" element={<ProtectedRoute><DishPage /></ProtectedRoute>} />
             <Route path="/favorites" element={<ProtectedRoute><FavoritesPage /></ProtectedRoute>} />
+            <Route path="/recipe/:recipeId" element={<ProtectedRoute><RecipeDetailPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/profile/memory" element={<ProtectedRoute><MemoryVaultPage /></ProtectedRoute>} />
             <Route path="/profile/subscription" element={<ProtectedRoute><SubscriptionPage /></ProtectedRoute>} />
+            <Route path="/profile/evolution" element={<ProtectedRoute><TasteEvolutionPage /></ProtectedRoute>} />
             <Route path="/genome/identity" element={<ProtectedRoute><IdentityGenomePage /></ProtectedRoute>} />
             <Route path="/genome/flavor" element={<ProtectedRoute><FlavorGenomePage /></ProtectedRoute>} />
             <Route path="/profile/dietary" element={<ProtectedRoute><DietaryProfilePage /></ProtectedRoute>} />

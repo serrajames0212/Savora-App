@@ -37,7 +37,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET ?? 'secret', { expiresIn: '30d' });
   res.status(201).json({
-    user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
+    user: { id: user.id, email: user.email, name: user.name, onboardingComplete: user.onboardingComplete, createdAt: user.createdAt },
     token,
   });
 });
@@ -64,7 +64,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET ?? 'secret', { expiresIn: '30d' });
   res.json({
-    user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt },
+    user: { id: user.id, email: user.email, name: user.name, onboardingComplete: user.onboardingComplete, createdAt: user.createdAt },
     token,
   });
 });
@@ -77,7 +77,7 @@ router.post('/me', authMiddleware, async (req: AuthRequest, res: Response): Prom
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    res.json({ user: { id: user.id, email: user.email, name: user.name, createdAt: user.createdAt } });
+    res.json({ user: { id: user.id, email: user.email, name: user.name, onboardingComplete: user.onboardingComplete, createdAt: user.createdAt } });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch user' });
   }

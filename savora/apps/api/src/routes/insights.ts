@@ -62,6 +62,17 @@ router.get('/daily', authMiddleware, async (req: AuthRequest, res: Response): Pr
       prisma.flavorGenome.findUnique({ where: { userId } }),
     ]);
 
+    if (!identity && !flavor) {
+      const fallback: DailyInsightResult = {
+        insight: 'Your flavor genome is still forming. Explore and cook to build your profile.',
+        actionLabel: 'Generate a recipe',
+        actionMood: 'comfort',
+      };
+      dailyInsightCache.set(cacheKey, fallback);
+      res.json(fallback);
+      return;
+    }
+
     const genomeContext = JSON.stringify({ identity, flavor });
 
     const result = await callClaude<DailyInsightResult>(

@@ -35,4 +35,26 @@ router.get('/stats', authMiddleware, async (req: AuthRequest, res: Response): Pr
   }
 });
 
+// PATCH /api/profile/onboarding-complete
+router.patch('/onboarding-complete', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+  try {
+    await prisma.user.update({ where: { id: userId }, data: { onboardingComplete: true } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update onboarding status' });
+  }
+});
+
+// PATCH /api/profile/reset-onboarding
+router.patch('/reset-onboarding', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+  try {
+    await prisma.user.update({ where: { id: userId }, data: { onboardingComplete: false } });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to reset onboarding' });
+  }
+});
+
 export default router;

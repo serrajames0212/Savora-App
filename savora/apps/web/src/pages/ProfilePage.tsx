@@ -65,6 +65,7 @@ const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const user = useUserStore((s) => s.user);
   const logout = useUserStore((s) => s.logout);
+  const setOnboardingComplete = useUserStore((s) => s.setOnboardingComplete);
   const subscriptionStatus = useSubscriptionStore((s) => s.status);
   const culinaryIdentity = useGenomeStore((s) => s.culinaryIdentity);
   const flavorGenome = useGenomeStore((s) => s.flavorGenome);
@@ -73,6 +74,14 @@ const ProfilePage: React.FC = () => {
 
   // Sync subscription status from server
   useSubscriptionStatus();
+
+  const handleRetakeOnboarding = async () => {
+    try {
+      await api.patch('/profile/reset-onboarding');
+    } catch { /* ignore */ }
+    setOnboardingComplete(false);
+    navigate('/onboarding');
+  };
 
   const { data: stats } = useQuery<ProfileStats>({
     queryKey: ['profile', 'stats'],
@@ -340,9 +349,11 @@ const ProfilePage: React.FC = () => {
         <Card variant="surface">
           <div style={{ padding: '0 var(--space-2)' }}>
             <QuickLinkRow label="Memory Vault" to="/profile/memory" />
+            <QuickLinkRow label="Taste Evolution" to="/profile/evolution" />
             <QuickLinkRow label="Genome Detail" to="/genome/identity" />
             <QuickLinkRow label="Subscription" to="/profile/subscription" />
             <QuickLinkRow label="Dietary Profile" to="/profile/dietary" />
+            <QuickLinkRow label="Retake Onboarding" onTap={handleRetakeOnboarding} />
             <QuickLinkRow
               label="Notifications"
               onTap={() => addToast('Coming soon', 'info')}

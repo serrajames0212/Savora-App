@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ProgressBar } from '../ui/ProgressBar';
 import { useGenomeStore } from '../../stores/useGenomeStore';
+import { useUserStore } from '../../stores/useUserStore';
 import { useGenerateGenome } from '../../hooks/useGenerateGenome';
 import type { OnboardingData } from '../../hooks/useGenerateGenome';
 import api from '../../lib/api';
@@ -195,6 +196,7 @@ const OnboardingWizard: React.FC = () => {
   const navigate = useNavigate();
   const setCulinaryIdentity = useGenomeStore((s) => s.setCulinaryIdentity);
   const setFlavorGenome = useGenomeStore((s) => s.setFlavorGenome);
+  const setOnboardingComplete = useUserStore((s) => s.setOnboardingComplete);
   const { mutateAsync: generateGenome } = useGenerateGenome();
 
   // On mount: check for saved progress
@@ -262,6 +264,8 @@ const OnboardingWizard: React.FC = () => {
     localStorage.removeItem(STORAGE_KEY);
     setCulinaryIdentity(culinaryIdentity);
     setFlavorGenome(flavorGenome);
+    setOnboardingComplete(true);
+    api.patch('/profile/onboarding-complete').catch(() => {});
     navigate('/home');
   };
 

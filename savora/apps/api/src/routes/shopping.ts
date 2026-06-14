@@ -182,6 +182,55 @@ router.delete('/checked', authMiddleware, async (req: AuthRequest, res: Response
   }
 });
 
+// POST /api/shopping/add-from-recipe
+router.post('/add-from-recipe', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+  const { recipeId } = req.body as { recipeId: string };
+
+  if (!recipeId) {
+    res.status(400).json({ error: 'recipeId required' });
+    return;
+  }
+
+  try {
+    const recipe = await prisma.generatedRecipe.findUnique({ where: { id: recipeId } });
+    if (!recipe) {
+      res.status(404).json({ error: 'Recipe not found' });
+      return;
+    }
+
+    type IngredientItem = { name: string; amount?: string; unit?: string };
+    const ingredients = (recipe.ingredients as unknown as IngredientItem[]) ?? [];
+
+    const list = await prisma.shoppingList.upsert({
+      where: { userId },
+      create: { userId },
+      update: {},
+    });
+
+    await Promise.all(
+      ingredients.map((item: IngredientItem) =>
+        prisma.shoppingItem.create({
+          data: {
+            listId: list.id,
+            name: item.name,
+            amount: item.amount ?? null,
+            unit: item.unit ?? null,
+            category: categorizeIngredient(item.name),
+            sourceRecipeId: recipeId,
+            sourceTitle: recipe.title,
+          },
+        })
+      )
+    );
+
+    res.json({ added: ingredients.length });
+  } catch (err) {
+    console.error('Add from recipe error:', err);
+    res.status(500).json({ error: 'Failed to add ingredients' });
+  }
+});
+
 // DELETE /api/shopping - clear entire list
 router.delete('/', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   const userId = req.userId!;

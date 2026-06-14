@@ -375,6 +375,43 @@ router.post('/:id/favorite', authMiddleware, async (req: AuthRequest, res: Respo
   }
 });
 
+// GET /api/recipe/:id - fetch a single recipe by id
+router.get('/:id', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  const userId = req.userId!;
+  const { id } = req.params;
+  try {
+    const recipe = await prisma.generatedRecipe.findFirst({ where: { id, userId } });
+    if (!recipe) {
+      res.status(404).json({ error: 'Recipe not found' });
+      return;
+    }
+    const ingredients = recipe.ingredients as unknown as GeneratedRecipe['ingredients'];
+    const steps = recipe.steps as unknown as GeneratedRecipe['steps'];
+    const flavorProfile = recipe.flavorProfile as unknown as GeneratedRecipe['flavorProfile'];
+    const fingerprint = recipe.fingerprint as unknown as RecipeFingerprint;
+    const result: GeneratedRecipe = {
+      id: recipe.id,
+      title: recipe.title,
+      description: recipe.description,
+      mood: recipe.mood,
+      cuisineInspiration: recipe.cuisineInspiration,
+      dietaryType: recipe.dietaryType,
+      ingredients,
+      steps,
+      cookingTime: { prep: recipe.prepTime, cook: recipe.cookTime, total: recipe.totalTime },
+      difficulty: recipe.difficulty as GeneratedRecipe['difficulty'],
+      platingSuggestion: recipe.platingSuggestion,
+      pairingSuggestion: recipe.pairingSuggestion,
+      whyThisFits: recipe.whyThisFits,
+      flavorProfile,
+      fingerprint,
+    };
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch recipe' });
+  }
+});
+
 // GET /api/recipe/history
 router.get('/history', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
   const userId = req.userId!;
